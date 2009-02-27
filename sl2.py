@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
+import time
+import subprocess
 import ConfigParser
+import datetime
 
 OPTIONS = {
     # Unclassified settings
@@ -56,7 +60,30 @@ OPTIONS_SINGLE = {
     'video_copy_timestamps': 'copyts',
 }
 
-def main():
+def flatten(x):
+    """flatten(sequence) -> list
+
+    Returns a single, flat list which contains all elements retrieved
+    from the sequence and all recursively contained sub-sequences
+    (iterables).
+
+    Examples:
+    >>> [1, 2, [3,4], (5,6)]
+    [1, 2, [3, 4], (5, 6)]
+    >>> flatten([[[1,2,3], (42,None)], [4,5], [6], 7, MyVector(8,9,10)])
+    [1, 2, 3, 42, None, 4, 5, 6, 7, 8, 9, 10]
+
+    Taken from http://kogs-www.informatik.uni-hamburg.de/~meine/python_tricks"""
+
+    result = []
+    for el in x:
+        if hasattr(el, "__iter__") and not isinstance(el, basestring):
+            result.extend(flatten(el))
+        else:
+            result.append(el)
+    return result
+
+def build_commands():
     """ Main function. """
 
     commands = []
@@ -65,7 +92,7 @@ def main():
 
     for section in config.sections():
         options = dict(config.items(section))
-        command = []
+        command = [ [ "ffmpeg", '-v', '0'] ]
 
         # Threads must go in first position to do any difference
         if 'threads' in options:
@@ -76,9 +103,10 @@ def main():
         url_out = options['url-out']
         del options['url-in']
         del options['url-out']
+        command += [ ["-i", url_in ] ]
 
         # Generate the rest of the command
-        command += [ '-%s %s' % (OPTIONS[setting], value)
+        command += [ ['-' + OPTIONS[setting], value]
             for (setting, value) in options.iteritems() if setting in OPTIONS]
 
         # Single valued parameter
@@ -86,10 +114,65 @@ def main():
             for (setting, value) in options.iteritems()
             if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
 
-        commands += [ "ffmpeg -i " + url_in + " " + " ".join(command) + " " + url_out ]
+        command += [ url_out ]
+        commands += [ flatten(command) ]
         print commands[-1]
 
+    return commands
+
+class Monitor:
+
+    def __init__(self):
+        """ Init method. """
+
+        self.schedule = {}
+        self.process_list = {}
+
+    def start_command(self, command):
+        """ Start command and store it in process_list for reference. """
+
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.process_list[process.pid] = {'process': process, 'command': command}
+        print "Instanciate %d", process.pid
+
+    def run(self):
+        """ Main function. """
+
+        # Bookkeeping our instanciations
+        for command in build_commands():
+            self.start_command(command)
+
+        while True:
+            time.sleep(2)
+            print "LOOP"
+
+            # Restart a command in error after a number of iteration of the loop
+            for sched_item in self.schedule.keys():
+                if self.schedule[sched_item]['iter'] > 0:
+                    self.schedule[sched_item]['iter'] -= 1
+                else:
+                    self.start_command(self.schedule[sched_item]['command'])
+                    del self.schedule[sched_item]
+
+
+            # Monitor status of running process
+            for pid in self.process_list.keys():
+                process = self.process_list[pid]['process']
+                command = self.process_list[pid]['command']
+
+                if process.poll() is None:
+                    print "[%s] %d is alive" % (datetime.datetime.today(), pid)
+                    continue
+                else:
+                    print "PID ", pid, " failed. Error code is", process.poll()
+                    print "command was \"%s\"" % " ".join(command)
+                    print "Error was:"
+                    print process.stderr
+                    del self.process_list[pid]
+                    self.schedule[pid] = {'iter': 2, 'command': command }
+
+        print "EXITING"
+        sys.exit(os.EX_OK)
 
 if __name__ == '__main__':
-    main()
-
+    Monitor().run()
