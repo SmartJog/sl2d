@@ -4,9 +4,11 @@
 import os
 import sys
 import time
+import signal
 import subprocess
 import ConfigParser
-import datetime
+
+import sjutils
 
 OPTIONS = {
     # Unclassified settings
@@ -84,7 +86,7 @@ def flatten(x):
     return result
 
 def build_commands():
-    """ Main function. """
+    """ Build ffmpeg command line. """
 
     commands = []
     config = ConfigParser.ConfigParser()
@@ -116,7 +118,6 @@ def build_commands():
 
         command += [ url_out ]
         commands += [ flatten(command) ]
-        print commands[-1]
 
     return commands
 
@@ -127,13 +128,45 @@ class Monitor:
 
         self.schedule = {}
         self.process_list = {}
+        self.log = sjutils.Logger2("/var/log/sl2d/sl2d.log")
+        self.log.redirect_stdout_stderr()
+
+        signal.signal(signal.SIGTERM, self.shutdown)
+        signal.signal(signal.SIGINT, self.shutdown)
+
+    def shutdown(self, signum, frame):
+        """ Handling of sl2d shutdown. """
+
+        if frame:
+            del frame
+
+        while len(self.process_list.keys()) > 0:
+            self.log.write('%d process alive' % len(self.process_list.keys()))
+
+            for pid in self.process_list.keys():
+                # shutdown ffmpeg instances
+                process = self.process_list[pid]['process']
+                ret = process.poll()
+                if ret is None:
+                    process.stdin.write('q')
+                else:
+                    process.stdin.close()
+                    process.stdout.close()
+                    process.stderr.close()
+                    del self.process_list[pid]
+
+            time.sleep(2)
+
+        self.log.write("sl2d terminated by signal", signum)
+        self.log.close()
+        sys.exit(os.EX_OK)
 
     def start_command(self, command):
         """ Start command and store it in process_list for reference. """
 
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.process_list[process.pid] = {'process': process, 'command': command}
-        print "Instanciate %d", process.pid
+        self.log.write('Starting "%s" as pid %d' % (" ".join(command), process.pid))
 
     def run(self):
         """ Main function. """
@@ -144,13 +177,13 @@ class Monitor:
 
         while True:
             time.sleep(2)
-            print "LOOP"
 
             # Restart a command in error after a number of iteration of the loop
             for sched_item in self.schedule.keys():
                 if self.schedule[sched_item]['iter'] > 0:
                     self.schedule[sched_item]['iter'] -= 1
                 else:
+                    self.log.write('Respawning "%s"' % " ".join(self.schedule[sched_item]['command']))
                     self.start_command(self.schedule[sched_item]['command'])
                     del self.schedule[sched_item]
 
@@ -161,18 +194,18 @@ class Monitor:
                 command = self.process_list[pid]['command']
 
                 if process.poll() is None:
-                    print "[%s] %d is alive" % (datetime.datetime.today(), pid)
+                    #self.log.write('%d is alive' % pid)
                     continue
                 else:
-                    print "PID ", pid, " failed. Error code is", process.poll()
-                    print "command was \"%s\"" % " ".join(command)
-                    print "Error was:"
-                    print process.stderr
+                    self.log.write('%d died unexpectedly, error code is %d' % (pid, process.poll()))
+                    self.log.write('%d said: %s' % (pid, process.stderr.read()))
+                    process.stdin.close()
+                    process.stdout.close()
+                    process.stderr.close()
                     del self.process_list[pid]
                     self.schedule[pid] = {'iter': 2, 'command': command }
 
-        print "EXITING"
-        sys.exit(os.EX_OK)
+        self.shutdown()
 
 if __name__ == '__main__':
     Monitor().run()
