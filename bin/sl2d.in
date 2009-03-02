@@ -1,0 +1,338 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Mostly inspired by
+# http://mail.python.org/pipermail/python-list/2001-February/071414.html
+# and
+# http://code.activestate.com/recipes/278731/
+
+
+import os
+import sys
+import optparse
+import resource
+
+import time
+import signal
+import subprocess
+import ConfigParser
+
+import sjutils
+
+VERSION = "@PACKAGE_VERSION@"
+
+# Default daemon parameters.
+# File mode creation mask of the daemon.
+UMASK = 0
+
+# Default working directory for the daemon.
+WORKDIR = "/"
+
+# Default maximum for the number of available file descriptors.
+MAXFD = 1024
+
+DFLT_PIDFILE = "/var/run/sl2d/sl2d.pid"
+DFLT_LOGFILE = "/var/log/sl2d/sl2d.log"
+DFLT_CONFFILE = "/etc/sl2d.conf"
+
+DFLT_MAIN_LOOP_DELAY = 15
+DFLT_RESPAWN_MIN_DELAY = 5
+
+# The standard I/O file descriptors are redirected to /dev/null by default.
+if (hasattr(os, "devnull")):
+    REDIRECT_TO = os.devnull
+else:
+    REDIRECT_TO = "/dev/null"
+
+OPTIONS = {
+    # Unclassified settings
+    'format':       'f',
+    'flags':        'flags',
+    'flags2':       'flags2',
+    'partitions':   'partitions',
+    'coder':        'coder',
+    'refs':         'refs',
+    'threads':      'threads',
+
+    # Audio settings known by ffserver
+    'audio_codec':       'acodec',
+    'audio_bit_rate':    'ab',
+    'audio_channels':    'ac',
+    'audio_sample_rate': 'ar',
+
+    # Video settings known by ffserver
+    'video_codec':      'vcodec',
+    'video_bit_rate':   'b',
+    'video_size':       's',
+    'video_gop_size':   'g',
+    'video_q_min':      'qmin',
+    'video_q_max':      'qmax',
+    'video_frame_rate': 'r',
+
+    # Other video settings
+    'video_macroblock_decision': 'mbd',
+    'video_macroblock_l_max':    'mblmax',
+    'video_l_max':               'lmax',
+    'video_q_comp':              'qcomp',
+    'video_q_diff':              'qdiff',
+    'video_b_frames':            'bf',
+    'video_b_strategy':          'b_strategy',
+    'video_i_q_factor':          'i_qfactor',
+    'video_sc_threshold':        'sc_threshold',
+    'video_direct_pred':         'directpred',
+    'video_me_method':           'me_method',
+    'video_me_range':            'me_range',
+    'video_cmp':                 'cmp',
+    'video_sub_q':               'subq',
+    'video_keyint_min':          'keyint_min',
+    'video_sync_method':         'vsync',
+    'video_trellis':             'trellis',
+    'video_crop_left':           'cropleft',
+    'video_crop_right':          'cropright',
+    'video_crop_top':            'croptop',
+    'video_crop_bottom':         'cropbottom',
+
+    'audio_sync_method':         'async',
+}
+
+OPTIONS_SINGLE = {
+    'video_copy_timestamps': 'copyts',
+}
+
+def flatten(x):
+    """flatten(sequence) -> list
+
+    Returns a single, flat list which contains all elements retrieved
+    from the sequence and all recursively contained sub-sequences
+    (iterables).
+
+    Examples:
+    >>> [1, 2, [3,4], (5,6)]
+    [1, 2, [3, 4], (5, 6)]
+    >>> flatten([[[1,2,3], (42,None)], [4,5], [6], 7, MyVector(8,9,10)])
+    [1, 2, 3, 42, None, 4, 5, 6, 7, 8, 9, 10]"""
+
+    # This code was taken from http://kogs-www.informatik.uni-hamburg.de/~meine/python_tricks
+    # Similar code was also found on python mailing lists.
+
+    result = []
+    for el in x:
+        if hasattr(el, "__iter__") and not isinstance(el, basestring):
+            result.extend(flatten(el))
+        else:
+            result.append(el)
+    return result
+
+class Monitor:
+
+    def __init__(self, monitor_options):
+        """ Init method. """
+
+        self.schedule = {}
+        self.process_list = {}
+        self.commands = []
+
+        self.main_loop_delay = DFLT_MAIN_LOOP_DELAY
+        self.respawn_min_delay = DFLT_RESPAWN_MIN_DELAY
+
+        self.log = sjutils.Logger2(monitor_options.logfile)
+        self.parse_config(monitor_options.conffile)
+
+        signal.signal(signal.SIGTERM, self.shutdown)
+        signal.signal(signal.SIGINT,  self.shutdown)
+        signal.signal(signal.SIGCHLD, self.child_shutdown)
+
+    def parse_config(self, configfile):
+        """ Parse sl2d configuration file. """
+
+        self.commands = []
+        config = ConfigParser.RawConfigParser()
+        config.read(configfile)
+
+        for section in config.sections():
+            options = dict(config.items(section))
+
+            if section == "sl2d":
+                # These settings must exist
+                self.main_loop_delay = options['main_loop_delay']
+                self.respawn_min_delay = options['respawn_min_delay']
+            else:
+                # There can only be push sections here
+                command = [ [ "ffmpeg", '-v', '0'] ]
+
+                # Threads must go in first position to do any difference
+                if 'threads' in options:
+                    command += [ "-threads %s" % options.pop('threads') ]
+
+                url_in = options.pop('url-in')
+                url_out = options.pop('url-out')
+                command += [ ["-i", url_in ] ]
+
+                # Generate the rest of the command
+                command += [ ['-' + OPTIONS[setting], value]
+                    for (setting, value) in options.iteritems() if setting in OPTIONS]
+
+                # Single valued parameter
+                command += [ '-%s' % OPTIONS_SINGLE[setting]
+                    for (setting, value) in options.iteritems()
+                    if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
+
+                command += [ url_out ]
+                self.commands += [ flatten(command) ]
+
+    def respawn_command(self):
+        """ Restart scheduled commands. """
+
+        for sched_item in self.schedule.keys():
+
+            # Command failed too quickly, wait next round before respawning
+            if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
+                self.log.write('Command "%s" respawning too fast, delayed' % " ".join(self.schedule[sched_item]['command']))
+                continue
+
+            self.log.write('Respawning "%s"' % " ".join(self.schedule[sched_item]['command']))
+            self.start_command(self.schedule[sched_item]['command'])
+            del self.schedule[sched_item]
+
+    def child_shutdown(self, signum, frame):
+        """ Respawn command on SIGCHLD. """
+
+        if frame:
+            del frame
+
+        # Monitor status of running process
+        for pid in self.process_list.keys():
+            process = self.process_list[pid]['process']
+
+            if process.poll() is not None:
+                self.log.write('Process %d died unexpectedly, error code is %d' % (pid, process.poll()))
+                self.log.write('Process %d said: %s' % (pid, process.stderr.read()))
+                process.stdin.close()
+                process.stdout.close()
+                process.stderr.close()
+                self.schedule[pid] = {
+                    'command': self.process_list[pid]['command'],
+                    'timestamp': self.process_list[pid]['timestamp']}
+                del self.process_list[pid]
+
+        self.respawn_command()
+
+    def shutdown(self, signum, frame):
+        """ Shutdown sl2d on SIGTERM and SIGINT. """
+
+        if frame:
+            del frame
+
+        while len(self.process_list.keys()) > 0:
+            self.log.write('%d process alive' % len(self.process_list.keys()))
+
+            for pid in self.process_list.keys():
+                # shutdown ffmpeg instances
+                process = self.process_list[pid]['process']
+                ret = process.poll()
+                if ret is None:
+                    process.stdin.write('q')
+                else:
+                    process.stdin.close()
+                    process.stdout.close()
+                    process.stderr.close()
+                    del self.process_list[pid]
+
+            time.sleep(2)
+
+        self.log.write("sl2d terminated by signal", signum)
+        self.log.close()
+        os.remove(options.pidfile)
+        sys.exit(os.EX_OK)
+
+    def start_command(self, command):
+        """ Start command and store it in process_list for reference. """
+
+        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.process_list[process.pid] = {
+            'process': process,
+            'command': command,
+            'timestamp': time.time()}
+        self.log.write('Starting "%s" as pid %d' % (" ".join(command), process.pid))
+
+        return process.pid
+
+    def run(self):
+        """ Main function. """
+
+        self.log.write("sl2d started")
+
+        # Bookkeeping our instanciations
+        self.process_list = {}
+        for command in self.commands:
+            self.start_command(command)
+
+        # Main loop, monitor list of scheduled restarts
+        while True:
+            time.sleep(self.main_loop_delay)
+            self.respawn_command()
+
+        self.shutdown()
+
+def daemonize(options):
+    """ Detach process from the controlling terminal and run it as a daemon. """
+
+    if os.path.isfile(options.pidfile):
+        print "There is already a running instance"
+        os._exit(os.EX_OK)
+
+    try:
+        pid = os.fork()
+    except OSError, e:
+        raise Exception, "%s [%d]" % (e.strerror, e.errno)
+
+    if pid == 0:
+        # The first child.
+        os.setsid()
+        f = open(options.pidfile, 'w')
+        f.write("%d" % os.getpid())
+        f.close()
+        Monitor(options).run()
+
+    else:
+        os._exit(os.EX_OK)
+
+    # Resource usage information.
+    maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+    if (maxfd == resource.RLIM_INFINITY):
+        maxfd = MAXFD
+
+    # Iterate through and close all file descriptors.
+    for fd in range(0, maxfd):
+        try:
+            os.close(fd)
+        except OSError:	# ERROR, fd wasn't open to begin with (ignored)
+            pass
+
+    os.open(REDIRECT_TO, os.O_RDWR)	# standard input (0)
+
+    # Duplicate standard input to standard output and standard error.
+    os.dup2(0, 1)			# standard output (1)
+    os.dup2(0, 2)			# standard error (2)
+
+    return os.EX_OK
+
+if __name__ == "__main__":
+
+    parser = optparse.OptionParser(
+        version="%prog " + VERSION, option_list=[
+        optparse.Option("-f", "--conf",       dest="conffile", help="Define sl2d conf file", metavar="FILE", default=DFLT_CONFFILE),
+        optparse.Option("-l", "--log",        dest="logfile",  help="Define sl2d log file",  metavar="FILE", default=DFLT_LOGFILE),
+        optparse.Option("-p", "--pid",        dest="pidfile",  help="Define sl2d pid file",  metavar="FILE", default=DFLT_PIDFILE),
+        optparse.Option("-n", "--no-daemon",  dest="nodaemon", help="Define sl2d log file",  default=False)]
+        )
+
+    (options, args) = parser.parse_args()
+
+    if options.daemon:
+        retCode = daemonize(options)
+    else:
+        Monitor(options).run()
+
+    sys.exit(retCode)
+
