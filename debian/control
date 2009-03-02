@@ -1,0 +1,17 @@
+Source: sl2d
+Section: misc
+Priority: optional
+Maintainer: Gilles Dartiguelongue <gdartigu@smartjog.com>
+Uploaders:
+Build-Depends: debhelper (>= 5.0.38), python-central (>= 0.5.6), cdbs (>=0.4.48), txt2tags
+XS-Python-Version: current
+Standards-Version: 3.8.0
+
+Package: sl2d
+Architecture: all
+Depends: ${python:Depends}, sjconf1 (>= 1.2.0)
+XB-Python-Version: ${python:Versions}
+Recommends: sjconf-sl2d
+Description: streaming loader 2 daemon
+ streaming loader is a daemon that streams and transcodes content from/to
+ ffserver.

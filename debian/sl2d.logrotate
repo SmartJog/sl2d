@@ -1,0 +1,8 @@
+/var/log/sl2d/*.log {
+	weekly
+	missingok
+	rotate 7
+	copytruncate
+	compress
+	notifempty
+}

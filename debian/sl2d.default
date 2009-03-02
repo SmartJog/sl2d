@@ -1,0 +1,6 @@
+# Define user sl2d will run as
+#USER=sjuser
+#PIDFILE=/var/run/sl2d/sl2d.pid
+#LOGFILE=/var/log/sl2d/sl2d.log
+#CONFFILE=/etc/sl2d.conf
+#NICE=19

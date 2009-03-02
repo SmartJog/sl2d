@@ -1,0 +1,5 @@
+sl2d (0.1.0~dev-1) unstable; urgency=low
+
+  * Initial release. (Closes: #1514)
+
+ -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Mon, 02 Mar 2009 16:36:06 +0100
