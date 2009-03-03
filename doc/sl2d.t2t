@@ -1,0 +1,85 @@
+sl2d
+sl2d
+%%mtime
+
+%!target : man
+%!encoding : utf-8
+%!postproc(man): "^(\.TH.*) 1 "  "\1 8 "
+
+= NAME =
+
+sl2d - streaming loader daemon
+
+= SYNOPSIS =
+
+**sl2d** ""[""-**f** //conffile//""]"" ""[""-**l** //logfile//""]"" ""[""-**p** //pidfile//""]"" ""[""--**no-daemon**""]""
+
+= DESCRIPTION =
+
+sl2d is a daemon that streams and transcodes content from/to ffserver.
+
+= OPTIONS =
+
+: -**f** //conffile//
+The configuration file to use.
+
+: -**l** //logfile//
+The file where log message will be written.
+
+: -**p** //pidfile//
+The file to store the pid of the daemon.
+
+: --**no-daemon**
+Tells sl2d to stay in the foreground.
+
+
+= CONFIGURATION FILE =
+
+The configuration file is in the ini format. It must contain a main **sl2d**
+section with the following mandatory keys: **push**, **main_loop_delay** and
+**respawn_min_delay**.
+
+: **push** = //push1, ...//
+Comma separated list of names of push sections. This list can be empty. Note
+that values will be stripped of blank characters on the left and on the right.
+
+: **main_loop_delay** = //15//
+The value in seconds the main loop should iterate over the list of scheduled
+respawns.
+
+: **respawn_min_delay** = //5//
+The minimum value in seconds that should seperate two respawns of the same
+command.
+
+The configuration file may also contain an arbitrary number of sections of the
+form **[sl2d:push://push_name//]**. These sections needs two mandatory **url-in** and
+**url-out** settings but can also contain any kind of settings needed by the
+module in use. Currently the list of accepted optional parameters is:
+**format**, **flags**, **flags2**, **partitions**, **coder**, **refs**, **threads**,
+**audio_codec**, **audio_bit_rate**, **audio_channels**, **audio_sample_rate**,
+**video_codec**, **video_bit_rate**, **video_size**, **video_gop_size**,
+**video_q_min**, **video_q_max**, **video_frame_rate**,
+**video_macroblock_decision**, **video_macroblock_l_max**, **video_l_max**,
+**video_q_comp**, **video_q_diff**, **video_b_frames**, **video_b_strategy**,
+**video_i_q_factor**, **video_sc_threshold**, **video_direct_pred**,
+**video_me_method**, **video_me_range**, **video_cmp**, **video_sub_q**,
+**video_keyint_min**, **video_sync_method**, **video_trellis**,
+**video_crop_left**, **video_crop_right**, **video_crop_top**,
+**video_crop_bottom**, **audio_sync_method**, **video_copy_timestamps**.
+For details about these options please read **ffmpeg**(1) and
+**sjconf-ffserver**(8).
+
+: **url-in** = ""[""file:///dev/video0""]""
+The url of the input stream.
+
+: **url-out** = ""[""http://example.com:8090/output.ffm""]""
+The url of where to direct the stream to.
+
+
+= AUTHOR =
+
+The sl2d daemon and this manual page have been written by the **SmartJog** company.
+
+= SEE ALSO =
+
+**sjconf-sl2d**(8), **sjconf-ffserver**(8), **ffserver**(8), **ffmpeg**(1).

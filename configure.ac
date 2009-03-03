@@ -7,6 +7,7 @@ AM_PATH_PYTHON
 
 AC_CONFIG_FILES([
 	bin/sl2d
+	doc/Makefile
 	Makefile
 ])
 
