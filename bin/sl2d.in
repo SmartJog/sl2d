@@ -135,6 +135,7 @@ class Monitor:
         self.main_loop_delay = DFLT_MAIN_LOOP_DELAY
         self.respawn_min_delay = DFLT_RESPAWN_MIN_DELAY
 
+        self.daemon = not monitor_options.nodaemon
         self.log = sjutils.Logger2(monitor_options.logfile)
         self.parse_config(monitor_options.conffile)
 
@@ -242,7 +243,8 @@ class Monitor:
 
         self.log.write("sl2d terminated by signal", signum)
         self.log.close()
-        os.remove(options.pidfile)
+        if self.daemon:
+            os.remove(options.pidfile)
         sys.exit(os.EX_OK)
 
     def start_command(self, command):
@@ -324,12 +326,12 @@ if __name__ == "__main__":
         optparse.Option("-f", "--conf",       dest="conffile", help="Define sl2d conf file", metavar="FILE", default=DFLT_CONFFILE),
         optparse.Option("-l", "--log",        dest="logfile",  help="Define sl2d log file",  metavar="FILE", default=DFLT_LOGFILE),
         optparse.Option("-p", "--pid",        dest="pidfile",  help="Define sl2d pid file",  metavar="FILE", default=DFLT_PIDFILE),
-        optparse.Option("-n", "--no-daemon",  dest="nodaemon", help="Define sl2d log file",  default=False)]
+        optparse.Option("-n", "--no-daemon",  dest="nodaemon", help="Define sl2d log file",  action="store_true",  default=False)]
         )
 
     (options, args) = parser.parse_args()
 
-    if options.daemon:
+    if not options.nodaemon:
         retCode = daemonize(options)
     else:
         Monitor(options).run()
