@@ -155,8 +155,8 @@ class Monitor:
 
             if section == "sl2d":
                 # These settings must exist
-                self.main_loop_delay = options['main_loop_delay']
-                self.respawn_min_delay = options['respawn_min_delay']
+                self.main_loop_delay = float(options['main_loop_delay'])
+                self.respawn_min_delay = float(options['respawn_min_delay'])
             else:
                 # There can only be push sections here
                 command = [ [ "ffmpeg", '-v', '0'] ]
