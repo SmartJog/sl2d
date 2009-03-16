@@ -193,7 +193,11 @@ class Monitor:
 
             self.log.write('Respawning "%s"' % " ".join(self.schedule[sched_item]['command']))
             self.start_command(self.schedule[sched_item]['command'])
-            del self.schedule[sched_item]
+            try:
+                del self.schedule[sched_item]
+            except KeyError:
+                self.log.write('Command that had PID:%d disappeared from the queue.' % sched_item)
+                pass
 
     def child_shutdown(self, signum, frame):
         """ Respawn command on SIGCHLD. """
