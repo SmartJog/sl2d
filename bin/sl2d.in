@@ -319,8 +319,12 @@ def daemonize(options):
     """ Detach process from the controlling terminal and run it as a daemon. """
 
     if os.path.isfile(options.pidfile):
-        print "There is already a running instance"
-        os._exit(os.EX_OK)
+        fd = open(options.pidfile)
+        old_pid = int(fd.read())
+        fd.close()
+        if os.path.isfile("/proc/%d/cmdline" % old_pid):
+            print "There is already a running instance"
+            os._exit(os.EX_OK)
 
     try:
         pid = os.fork()

@@ -1,6 +1,7 @@
 Version 0.2.0~dev
 
 	* Handle pre/post command, closes: #1641.
+	* Do not die if pid file exists but refers to an non-existing process.
 
 Version 0.1.0 Released on 2009/03/20
 
