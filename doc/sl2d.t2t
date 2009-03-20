@@ -75,6 +75,12 @@ The url of the input stream.
 : **url-out** = ""[""http://example.com:8090/output.ffm""]""
 The url of where to direct the stream to.
 
+: **precommand-1** = ""[""some_command some arguments""]""
+A command to execute before spawning a new instance of the stream.
+
+: **postcommand-1** = ""[""some_command some other arguments""]""
+A command to execute when a stream process died.
+
 
 = AUTHOR =
 

@@ -9,6 +9,7 @@
 
 import os
 import sys
+import re
 import optparse
 import resource
 
@@ -137,6 +138,8 @@ class Monitor:
 
         self.daemon = not monitor_options.nodaemon
         self.log = sjutils.Logger2(monitor_options.logfile)
+        if self.daemon:
+            self.log.redirect_stdout_stderr()
         self.parse_config(monitor_options.conffile)
 
         signal.signal(signal.SIGTERM, self.shutdown)
@@ -165,6 +168,19 @@ class Monitor:
                 if 'threads' in options:
                     command += [ "-threads %s" % options.pop('threads') ]
 
+                # pre and post commands are optional
+                precommand = None
+                postcommand = None
+
+                if 'precommand-1' in options:
+                    precommand = [ [arg for arg in cmd.split(' ') if arg]
+                        for (id, cmd) in options.iteritems() if re.match('precommand-[0-9]+', id)]
+                    self.log.write("%d precommands" % len(precommand))
+
+                if 'postcommand-1' in options:
+                    postcommand = [ [arg for arg in cmd.split(' ') if arg]
+                        for (id, cmd) in options.iteritems() if re.match('postcommand-[0-9]+', id)]
+
                 url_in = options.pop('url-in')
                 url_out = options.pop('url-out')
                 command += [ ["-i", url_in ] ]
@@ -179,21 +195,23 @@ class Monitor:
                     if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
 
                 command += [ url_out ]
-                self.commands += [ flatten(command) ]
+                self.commands += [{'pre': precommand,
+                    'main': flatten(command),
+                    'post': postcommand, }]
 
     def respawn_command(self):
         """ Restart scheduled commands. """
 
         for sched_item in self.schedule.keys():
 
-            # Command failed too quickly, wait next round before respawning
-            if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
-                self.log.write('Command "%s" respawning too fast, delayed' % " ".join(self.schedule[sched_item]['command']))
-                continue
-
-            self.log.write('Respawning "%s"' % " ".join(self.schedule[sched_item]['command']))
-            self.start_command(self.schedule[sched_item]['command'])
             try:
+                # Command failed too quickly, wait next round before respawning
+                if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
+                    self.log.write('Command "%s" respawning too fast, delayed' % " ".join(self.schedule[sched_item]['command']['main']))
+                    continue
+
+                self.log.write('Respawning "%s"' % " ".join(self.schedule[sched_item]['command']['main']))
+                self.start_command(self.schedule[sched_item]['command'])
                 del self.schedule[sched_item]
             except KeyError:
                 self.log.write('Command that had PID:%d disappeared from the queue.' % sched_item)
@@ -210,13 +228,22 @@ class Monitor:
             process = self.process_list[pid]['process']
 
             if process.poll() is not None:
-                self.log.write('Process %d died unexpectedly, error code is %d' % (pid, process.poll()))
-                self.log.write('Process %d said: %s' % (pid, process.stderr.read()))
+                self.log.write('Process %d: died unexpectedly, error code is %d' % (pid, process.poll()))
+                self.log.write('Process %d: said: %s' % (pid, process.stderr.read()))
                 process.stdin.close()
                 process.stdout.close()
                 process.stderr.close()
+                command = self.process_list[pid]['command']
+
+                if command['post']:
+                    trash = os.open(REDIRECT_TO, os.O_RDWR)
+                    for postcmd in command['post']:
+                        self.log.write('Process %d: spawning post-death command' % pid)
+                        subprocess.Popen(command['post'], stdout=trash, stderr=trash)
+                    os.close(trash)
+
                 self.schedule[pid] = {
-                    'command': self.process_list[pid]['command'],
+                    'command': command,
                     'timestamp': self.process_list[pid]['timestamp']}
                 del self.process_list[pid]
 
@@ -254,12 +281,20 @@ class Monitor:
     def start_command(self, command):
         """ Start command and store it in process_list for reference. """
 
-        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if command['pre']:
+            trash = os.open(REDIRECT_TO, os.O_RDWR)
+            for precmd in command['pre']:
+                self.log.write('Spawning pre-running command for "%s"' % " ".join(command['main']))
+                preprocess = subprocess.Popen(precmd, stdout=trash, stderr=trash)
+                preprocess.wait()
+            os.close(trash)
+
+        process = subprocess.Popen(command['main'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.process_list[process.pid] = {
             'process': process,
             'command': command,
             'timestamp': time.time()}
-        self.log.write('Starting "%s" as pid %d' % (" ".join(command), process.pid))
+        self.log.write('Starting "%s" as pid %d' % (" ".join(command['main']), process.pid))
 
         return process.pid
 
