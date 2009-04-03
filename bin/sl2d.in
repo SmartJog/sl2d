@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # Mostly inspired by
-# http://mail.python.org/pipermail/python-list/2001-February/071414.html
-# and
+# http://mail.python.org/pipermail/python-list/2001-February/071414.html
+# and
 # http://code.activestate.com/recipes/278731/
 
 
@@ -113,8 +113,8 @@ def flatten(x):
     >>> flatten([[[1,2,3], (42,None)], [4,5], [6], 7, MyVector(8,9,10)])
     [1, 2, 3, 42, None, 4, 5, 6, 7, 8, 9, 10]"""
 
-    # This code was taken from http://kogs-www.informatik.uni-hamburg.de/~meine/python_tricks
-    # Similar code was also found on python mailing lists.
+    # This code was taken from http://kogs-www.informatik.uni-hamburg.de/~meine/python_tricks
+    # Similar code was also found on python mailing lists.
 
     result = []
     for el in x:
@@ -157,11 +157,11 @@ class Monitor:
             options = dict(config.items(section))
 
             if section == "sl2d":
-                # These settings must exist
+                # These settings must exist
                 self.main_loop_delay = float(options['main_loop_delay'])
                 self.respawn_min_delay = float(options['respawn_min_delay'])
             else:
-                # There can only be push sections here
+                # There can only be push sections here
                 command = [ [ "ffmpeg", '-v', '0'] ]
 
                 # Threads must go in first position to do any difference
@@ -205,7 +205,7 @@ class Monitor:
         for sched_item in self.schedule.keys():
 
             try:
-                # Command failed too quickly, wait next round before respawning
+                # Command failed too quickly, wait next round before respawning
                 if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
                     self.log.write('Command "%s" respawning too fast, delayed' % " ".join(self.schedule[sched_item]['command']['main']))
                     continue
