@@ -1,3 +1,7 @@
+Version 0.2.1~dev
+
+	* Load pre/post commands in sequence, starting at 1, refs: #1810.
+
 Version 0.2.0 Released on 2009/03/20
 
 	* Handle pre/post command, closes: #1641.

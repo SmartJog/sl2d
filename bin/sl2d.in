@@ -168,18 +168,24 @@ class Monitor:
                 if 'threads' in options:
                     command += [ "-threads %s" % options.pop('threads') ]
 
-                # pre and post commands are optional
-                precommand = None
-                postcommand = None
+                # pre and post commands are optional
+                precommand = []
+                postcommand = []
 
-                if 'precommand-1' in options:
-                    precommand = [ [arg for arg in cmd.split(' ') if arg]
-                        for (id, cmd) in options.iteritems() if re.match('precommand-[0-9]+', id)]
-                    self.log.write("%d precommands" % len(precommand))
+                # Extract pre/post commands if any
+                cmd_id = 1
+                while 'precommand-%d' % cmd_id in options:
+                    cmd = options['precommand-%d' % cmd_id]
+                    precommand += [ [arg for arg in cmd.split(' ') if arg] ]
+                    cmd_id = cmd_id+1
+                self.log.write("Found %d precommand(s) in section %s" % (len(precommand), section))
 
-                if 'postcommand-1' in options:
-                    postcommand = [ [arg for arg in cmd.split(' ') if arg]
-                        for (id, cmd) in options.iteritems() if re.match('postcommand-[0-9]+', id)]
+                cmd_id = 1
+                while 'postcommand-%d' % cmd_id in options:
+                    cmd = options['postcommand-%d' % cmd_id]
+                    postcommand += [ [arg for arg in cmd.split(' ') if arg] ]
+                    cmd_id = cmd_id+1
+                self.log.write("Found %d postcommand(s) in section %s" % (len(postcommand), section))
 
                 url_in = options.pop('url-in')
                 url_out = options.pop('url-out')
