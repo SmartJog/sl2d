@@ -57,6 +57,7 @@ OPTIONS = {
 
     # Audio settings known by ffserver
     'audio_codec':       'acodec',
+    'audio_volume':      'vol',
     'audio_bit_rate':    'ab',
     'audio_channels':    'ac',
     'audio_sample_rate': 'ar',
