@@ -51,9 +51,12 @@ respawns.
 The minimum value in seconds that should seperate two respawns of the same
 command.
 
+
 The configuration file may also contain an arbitrary number of sections of the
-form **[sl2d:push://push_name//]**. These sections needs two mandatory **url-in** and
-**url-out** settings but can also contain any kind of settings needed by the
+form **[sl2d:push://push_name//]**. These sections needs three mandatory
+settings. **url-in** and **url-out** and **binary**.
+
+**Push** sections can also contain any kind of settings needed by the
 module in use. Currently the list of accepted optional parameters is:
 **format**, **flags**, **flags2**, **partitions**, **coder**, **refs**, **threads**,
 **audio_codec**, **audio_bit_rate**, **audio_channels**, **audio_sample_rate**,
@@ -74,6 +77,9 @@ The url of the input stream.
 
 : **url-out** = ""[""http://example.com:8090/output.ffm""]""
 The url of where to direct the stream to.
+
+: **binary** = ""[""ffmpeg""]""
+The name of the binary that will be passed to the module.
 
 : **precommand-1** = ""[""some_command some arguments""]""
 A command to execute before spawning a new instance of the stream.

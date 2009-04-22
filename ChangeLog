@@ -1,3 +1,7 @@
+Version 0.2.2~dev
+
+	* Make path of ffmpeg's binary configurable, refs: #1847.
+
 Version 0.2.1 Released on 2009/04/09
 
 	* Load pre/post commands in sequence, starting at 1, refs: #1810.

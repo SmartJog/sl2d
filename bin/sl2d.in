@@ -153,57 +153,62 @@ class Monitor:
         config = ConfigParser.RawConfigParser()
         config.read(configfile)
 
+        # Get the settings from the main section
+        options = dict(config.items('sl2d'))
+        self.main_loop_delay = float(options['main_loop_delay'])
+        self.respawn_min_delay = float(options['respawn_min_delay'])
+
         for section in config.sections():
             options = dict(config.items(section))
 
+            # Skip [sl2d] since we took care of this earlier
             if section == "sl2d":
-                # These settings must exist
-                self.main_loop_delay = float(options['main_loop_delay'])
-                self.respawn_min_delay = float(options['respawn_min_delay'])
-            else:
-                # There can only be push sections here
-                command = [ [ "ffmpeg", '-v', '0'] ]
+                continue
 
-                # Threads must go in first position to do any difference
-                if 'threads' in options:
-                    command += [ "-threads %s" % options.pop('threads') ]
+            # There can only be push sections here
+            # binary option must be defined
+            command = [ [ options['binary'], '-v', '0'] ]
 
-                # pre and post commands are optional
-                precommand = []
-                postcommand = []
+            # Threads must go in first position to do any difference
+            if 'threads' in options:
+                command += [ "-threads %s" % options.pop('threads') ]
 
-                # Extract pre/post commands if any
-                cmd_id = 1
-                while 'precommand-%d' % cmd_id in options:
-                    cmd = options['precommand-%d' % cmd_id]
-                    precommand += [ [arg for arg in cmd.split(' ') if arg] ]
-                    cmd_id = cmd_id+1
-                self.log.write("Found %d precommand(s) in section %s" % (len(precommand), section))
+            # pre and post commands are optional
+            precommand = []
+            postcommand = []
 
-                cmd_id = 1
-                while 'postcommand-%d' % cmd_id in options:
-                    cmd = options['postcommand-%d' % cmd_id]
-                    postcommand += [ [arg for arg in cmd.split(' ') if arg] ]
-                    cmd_id = cmd_id+1
-                self.log.write("Found %d postcommand(s) in section %s" % (len(postcommand), section))
+            # Extract pre/post commands if any
+            cmd_id = 1
+            while 'precommand-%d' % cmd_id in options:
+                cmd = options['precommand-%d' % cmd_id]
+                precommand += [ [arg for arg in cmd.split(' ') if arg] ]
+                cmd_id = cmd_id+1
+            self.log.write("Found %d precommand(s) in section %s" % (len(precommand), section))
 
-                url_in = options.pop('url-in')
-                url_out = options.pop('url-out')
-                command += [ ["-i", url_in ] ]
+            cmd_id = 1
+            while 'postcommand-%d' % cmd_id in options:
+                cmd = options['postcommand-%d' % cmd_id]
+                postcommand += [ [arg for arg in cmd.split(' ') if arg] ]
+                cmd_id = cmd_id+1
+            self.log.write("Found %d postcommand(s) in section %s" % (len(postcommand), section))
 
-                # Generate the rest of the command
-                command += [ ['-' + OPTIONS[setting], value]
-                    for (setting, value) in options.iteritems() if setting in OPTIONS]
+            url_in = options.pop('url-in')
+            url_out = options.pop('url-out')
+            command += [ ["-i", url_in ] ]
 
-                # Single valued parameter
-                command += [ '-%s' % OPTIONS_SINGLE[setting]
-                    for (setting, value) in options.iteritems()
-                    if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
+            # Generate the rest of the command
+            command += [ ['-' + OPTIONS[setting], value]
+                for (setting, value) in options.iteritems() if setting in OPTIONS]
 
-                command += [ url_out ]
-                self.commands += [{'pre': precommand,
-                    'main': flatten(command),
-                    'post': postcommand, }]
+            # Single valued parameter
+            command += [ '-%s' % OPTIONS_SINGLE[setting]
+                for (setting, value) in options.iteritems()
+                if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
+
+            command += [ url_out ]
+            self.commands += [{'pre': precommand,
+                'main': flatten(command),
+                'post': postcommand, }]
 
     def respawn_command(self):
         """ Restart scheduled commands. """
