@@ -9,7 +9,6 @@
 
 import os
 import sys
-import re
 import optparse
 import resource
 
@@ -184,14 +183,14 @@ class Monitor:
                 cmd = options['precommand-%d' % cmd_id]
                 precommand += [ [arg for arg in cmd.split(' ') if arg] ]
                 cmd_id = cmd_id+1
-            self.log.write("Found %d precommand(s) in section %s" % (len(precommand), section))
+            self.log.write("[%s] found %d precommand(s)" % (section, len(precommand)))
 
             cmd_id = 1
             while 'postcommand-%d' % cmd_id in options:
                 cmd = options['postcommand-%d' % cmd_id]
                 postcommand += [ [arg for arg in cmd.split(' ') if arg] ]
                 cmd_id = cmd_id+1
-            self.log.write("Found %d postcommand(s) in section %s" % (len(postcommand), section))
+            self.log.write("[%s] found %d postcommand(s)" % (section, len(postcommand)))
 
             url_in = options.pop('url-in')
             url_out = options.pop('url-out')
@@ -209,7 +208,8 @@ class Monitor:
             command += [ url_out ]
             self.commands += [{'pre': precommand,
                 'main': flatten(command),
-                'post': postcommand, }]
+                'post': postcommand,
+                'section': section, }]
 
     def respawn_command(self):
         """ Restart scheduled commands. """
@@ -217,17 +217,18 @@ class Monitor:
         for sched_item in self.schedule.keys():
 
             try:
+                command = self.schedule[sched_item]['command']
+
                 # Command failed too quickly, wait next round before respawning
                 if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
-                    self.log.write('Command "%s" respawning too fast, delayed' % " ".join(self.schedule[sched_item]['command']['main']))
+                    self.log.write('[%s] command "%s" respawning too fast, delayed' % (command['section'], " ".join(command['main'])))
                     continue
 
-                self.log.write('Respawning "%s"' % " ".join(self.schedule[sched_item]['command']['main']))
+                self.log.write('[%s] respawning "%s"' % (command['section'], ' '.join(command['main'])))
                 self.start_command(self.schedule[sched_item]['command'])
                 del self.schedule[sched_item]
             except KeyError:
                 self.log.write('Command that had PID:%d disappeared from the queue.' % sched_item)
-                pass
 
     def child_shutdown(self, signum, frame):
         """ Respawn command on SIGCHLD. """
@@ -240,20 +241,29 @@ class Monitor:
             process = self.process_list[pid]['process']
 
             if process.poll() is not None:
-                self.log.write('Process %d: died unexpectedly, error code is %d' % (pid, process.poll()))
-                self.log.write('Process %d: said: %s' % (pid, process.stderr.read()))
+                command = self.process_list[pid]['command']
+
+                self.log.write('[%s] Process %d: received signal %d' % (command['section'], pid, signum))
+                self.log.write('[%s] Process %d: died unexpectedly, error code is %d' % (command['section'], pid, process.poll()))
+                self.log.write('[%s] Process %d: said <%s>' % (command['section'], pid, process.stderr.read()))
                 process.stdin.close()
                 process.stdout.close()
                 process.stderr.close()
-                command = self.process_list[pid]['command']
 
+                # Execute post commands if any.
+                # Do not wait for them and do not crash for them either.
                 if command['post']:
                     trash = os.open(REDIRECT_TO, os.O_RDWR)
+                    self.log.write('[%s] Process %d: spawning post-death commands' % (command['section'], pid))
                     for postcmd in command['post']:
-                        self.log.write('Process %d: spawning post-death command' % pid)
-                        subprocess.Popen(command['post'], stdout=trash, stderr=trash)
+                        try:
+                            self.log.write('[%s] Process %d: post-death: <%s>' % (command['section'], pid, ' '.join(postcmd)))
+                            subprocess.Popen(postcmd, stdout=trash, stderr=trash)
+                        except Exception:
+                            self.log.write('[%s] Process %d: post-death command <%s> failed' % (command['section'], pid, ' '.join(postcmd)))
                     os.close(trash)
 
+                # Adding to the 'scheduled for restart' list
                 self.schedule[pid] = {
                     'command': command,
                     'timestamp': self.process_list[pid]['timestamp']}
@@ -302,10 +312,17 @@ class Monitor:
 
         if command['pre']:
             trash = os.open(REDIRECT_TO, os.O_RDWR)
+            self.log.write('[%s] spawning pre-running commands' % command['section'])
             for precmd in command['pre']:
-                self.log.write('Spawning pre-running command for "%s"' % " ".join(command['main']))
-                preprocess = subprocess.Popen(precmd, stdout=trash, stderr=trash)
-                preprocess.wait()
+                try:
+                    self.log.write('[%s] pre-command "%s"' % (command['section'], ' '.join(precmd)))
+                    preprocess = subprocess.Popen(precmd, stdout=trash, stderr=trash)
+                    preprocess.wait()
+                except Exception:
+                    self.log.write('[%s] pre-command "%s" failed' % (command['section'], ' '.join(precmd)))
+                    self.log.write('[%s] this push will now stop' % command['section'])
+                    # pre-commands are mandatory, schedule and return if one failed
+                    return None
             os.close(trash)
 
         process = subprocess.Popen(command['main'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -313,14 +330,14 @@ class Monitor:
             'process': process,
             'command': command,
             'timestamp': time.time()}
-        self.log.write('Starting "%s" as pid %d' % (" ".join(command['main']), process.pid))
+        self.log.write('[%s] starting "%s" as pid %d' % (command['section'], " ".join(command['main']), process.pid))
 
         return process.pid
 
     def run(self):
         """ Main function. """
 
-        self.log.write("sl2d started")
+        self.log.write("*** sl2d version %s, started ***" % VERSION)
 
         # Bookkeeping our instanciations
         self.process_list = {}
@@ -347,8 +364,8 @@ def daemonize(options):
 
     try:
         pid = os.fork()
-    except OSError, e:
-        raise Exception, "%s [%d]" % (e.strerror, e.errno)
+    except OSError, error:
+        raise Exception, "%s [%d]" % (error.strerror, error.errno)
 
     if pid == 0:
         # The first child.
