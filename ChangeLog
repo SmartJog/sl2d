@@ -1,6 +1,7 @@
 Version 0.2.2~dev
 
 	* Make path of ffmpeg's binary configurable, refs: #1847.
+	* Do not loop forever waiting children's death, closes: #1850.
 
 Version 0.2.1 Released on 2009/04/09
 

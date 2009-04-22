@@ -266,7 +266,8 @@ class Monitor:
         if frame:
             del frame
 
-        while len(self.process_list.keys()) > 0:
+        death_loop = 0
+        while len(self.process_list.keys()) > 0 or death_loop > 3:
             self.log.write('%d process alive' % len(self.process_list.keys()))
 
             for pid in self.process_list.keys():
@@ -281,9 +282,15 @@ class Monitor:
                     process.stderr.close()
                     del self.process_list[pid]
 
+            death_loop = death_loop + 1
             time.sleep(2)
 
-        self.log.write("sl2d terminated by signal", signum)
+        # Sick of waiting, slash 'em all
+        if death_loop > 3:
+            for pid in self.process_list.keys():
+                os.kill(pid, signal.SIGKILL)
+
+        self.log.write("*** sl2d terminated by signal %d ***" % signum)
         self.log.close()
         if self.daemon:
             os.remove(options.pidfile)
