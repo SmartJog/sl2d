@@ -5,6 +5,7 @@ Version 0.2.2~dev
 	* Add support for audio volume parameter.
 	* Catch pre/post command failures, closes: #1849.
 	* Forbid scheduling of the same command twice, closes: #1852.
+	* Allow printing log on stdout in no-daemon mode.
 
 Version 0.2.1 Released on 2009/04/09
 

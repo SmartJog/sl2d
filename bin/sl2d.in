@@ -137,9 +137,14 @@ class Monitor:
         self.respawn_min_delay = DFLT_RESPAWN_MIN_DELAY
 
         self.daemon = not monitor_options.nodaemon
-        self.log = sjutils.Logger2(monitor_options.logfile)
         if self.daemon:
+            self.log = sjutils.Logger2(monitor_options.logfile)
             self.log.redirect_stdout_stderr()
+        else:
+            # This is not portable but who cares ?
+            self.log = sjutils.Logger2('/dev/stdout')
+
+        self.log.write("*** sl2d version %s, init ***" % VERSION)
         self.parse_config(monitor_options.conffile)
 
         signal.signal(signal.SIGTERM, self.shutdown)
