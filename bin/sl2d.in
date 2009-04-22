@@ -263,10 +263,16 @@ class Monitor:
                             self.log.write('[%s] Process %d: post-death command <%s> failed' % (command['section'], pid, ' '.join(postcmd)))
                     os.close(trash)
 
-                # Adding to the 'scheduled for restart' list
-                self.schedule[pid] = {
-                    'command': command,
-                    'timestamp': self.process_list[pid]['timestamp']}
+                # Adding to the 'scheduled for restart' list unless we already
+                # did it ealier, somehow.
+                for check_pid in self.schedule:
+                    if self.schedule[check_pid]['command']['section'] == command['section']:
+                        self.log.write('[%s] Trick to avoid duplicating commands' % command['section'])
+                        break
+                else:
+                    self.schedule[pid] = {
+                        'command': command,
+                        'timestamp': self.process_list[pid]['timestamp']}
                 del self.process_list[pid]
 
         self.respawn_command()
