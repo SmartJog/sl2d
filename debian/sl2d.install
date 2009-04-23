@@ -1,2 +1,3 @@
 debian/tmp/usr/bin
+debian/tmp/usr/share/sl2d
 debian/tmp/usr/share/man/man8/sl2d.8
