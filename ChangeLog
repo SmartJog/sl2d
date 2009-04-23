@@ -8,6 +8,7 @@ Version 0.2.2~dev
 	* Allow printing log on stdout in no-daemon mode.
 	* Add scripts as a workaround to current situation with tvrbox
 	  streaming.
+	* Do not send mail if commands did not lived long enough.
 
 Version 0.2.1 Released on 2009/04/09
 
