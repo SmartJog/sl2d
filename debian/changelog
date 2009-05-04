@@ -1,8 +1,9 @@
-sl2d (0.2.2~dev-1) unstable; urgency=low
+sl2d (0.2.2-1) unstable; urgency=low
 
+  [ Gilles Dartiguelongue ]
   * New upstream release.
 
- -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Wed, 22 Apr 2009 11:59:58 +0200
+ -- Thomas Meson <thomas.meson@smartjog.com>  Mon, 04 May 2009 16:59:37 +0200
 
 sl2d (0.2.1-1) unstable; urgency=low
 
