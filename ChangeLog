@@ -1,3 +1,7 @@
+Version 0.2.3~dev
+
+	* Fix incorrect test in post-command executions, closes: #1900.
+
 Version 0.2.2 Released on 2009/05/04
 
 	* Make path of ffmpeg's binary configurable, refs: #1847.

@@ -257,7 +257,7 @@ class Monitor:
 
                 # Execute post commands if any and if command lived long enough.
                 # Do not wait for them and do not crash for them either.
-                if command['post'] and command['timestamp'] + 2 * self.respawn_min_delay > time.time() :
+                if command['post'] and self.process_list[pid]['timestamp'] + 2 * self.respawn_min_delay > time.time() :
                     trash = os.open(REDIRECT_TO, os.O_RDWR)
                     self.log.write('[%s] Process %d: spawning post-death commands' % (command['section'], pid))
                     for postcmd in command['post']:
