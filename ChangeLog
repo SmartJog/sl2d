@@ -1,4 +1,4 @@
-Version 0.2.3~dev
+Version 0.2.3 Released on 2009/05/06
 
 	* Fix incorrect test in post-command executions, closes: #1900.
 	* Fix incorrect test for quick death of childs, closes: #1850.
