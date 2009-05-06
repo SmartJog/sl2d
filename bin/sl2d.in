@@ -289,7 +289,7 @@ class Monitor:
             del frame
 
         death_loop = 0
-        while len(self.process_list.keys()) > 0 or death_loop > 3:
+        while len(self.process_list.keys()) > 0 and death_loop < 3:
             self.log.write('%d process alive' % len(self.process_list.keys()))
 
             for pid in self.process_list.keys():
