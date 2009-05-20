@@ -1,5 +1,5 @@
 
 sl2d_scriptsdir = $(pkgdatadir)
-sl2d_scripts_DATA = ffmpeg_pipe_ezstream.sh prepare_ezstream_conf.sh mail.py
+sl2d_scripts_SCRIPTS = ffmpeg_pipe_ezstream.sh prepare_ezstream_conf.sh mail.py
 
-EXTRA_DIST = $(sl2d_scripts_DATA)
+dist_sl2d_scripts_SCRIPTS = $(sl2d_scripts_SCRIPTS)

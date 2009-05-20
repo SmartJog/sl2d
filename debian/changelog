@@ -1,8 +1,9 @@
-sl2d (0.2.3-2~dev) unstable; urgency=low
+sl2d (0.2.4~dev-1) unstable; urgency=low
 
-  * Distribute optional scripts as chmod +x.
+  * New upstream release.
+  * Added myself as uploader.
 
- -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Mon, 18 May 2009 11:54:21 +0200
+ -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Wed, 20 May 2009 14:47:01 +0200
 
 sl2d (0.2.3-1) unstable; urgency=low
 
