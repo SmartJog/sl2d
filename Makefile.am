@@ -1,4 +1,4 @@
-SUBDIRS = doc scripts
+SUBDIRS = doc etc scripts
 
 dist_bin_SCRIPTS = bin/sl2d
 
