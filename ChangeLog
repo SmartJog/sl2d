@@ -1,6 +1,7 @@
 Version 0.2.4~dev
 
 	* Fix scripts being distributed/installed without execution rights.
+	* Add a verbose option, closes: #1970.
 
 Version 0.2.3 Released on 2009/05/06
 
