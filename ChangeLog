@@ -4,6 +4,7 @@ Version 0.2.4~dev
 	* Add a verbose option, closes: #1970.
 	* Add sample configuration file.
 	* Delay respawn_command execution in SIGCHLD handler, closes: #1971.
+	* Fix typo in sample configuration.
 
 Version 0.2.3 Released on 2009/05/06
 
