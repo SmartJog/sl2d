@@ -15,6 +15,7 @@ import resource
 import time
 import signal
 import pprint
+import inspect
 import subprocess
 import ConfigParser
 
@@ -136,6 +137,7 @@ class Monitor:
 
         self.main_loop_delay = DFLT_MAIN_LOOP_DELAY
         self.respawn_min_delay = DFLT_RESPAWN_MIN_DELAY
+        self.respawn_quick = False
         self.verbosity = monitor_options.verbosity
 
         self.daemon = not monitor_options.nodaemon
@@ -246,6 +248,9 @@ class Monitor:
             self.log.write('<respawn_command>')
         self.__print_process_status()
 
+        if self.respawn_quick:
+            self.respawn_quick = False
+
         for sched_item in self.schedule.keys():
 
             try:
@@ -271,9 +276,6 @@ class Monitor:
 
         if self.verbosity:
             self.log.write('Received SIGCHLD')
-
-        if frame:
-            del frame
 
         # Monitor status of running process
         for pid in self.process_list.keys():
@@ -313,6 +315,36 @@ class Monitor:
                         'command': command,
                         'timestamp': self.process_list[pid]['timestamp']}
                 del self.process_list[pid]
+
+        # Inspect context to see if we are being run during respawn_command
+        # execution. Set respawn_quick if necessary so that we will not
+        # have to wait respawn_min_delay to respawn the command we are
+        # currently treating while not interfering with current execution of
+        # respawn_command.
+        try:
+            if self.verbosity:
+                self.log.write('<frame>')
+            if self.verbosity > 1:
+                self.log.write(pprint.pformat(inspect.getframeinfo(frame)))
+
+            for item in inspect.getouterframes(frame):
+                if self.verbosity > 1:
+                    self.log.write(pprint.pformat(item))
+                elif self.verbosity:
+                    self.log.write('  * function: ' + item[3])
+
+                if item[3] == "respawn_command":
+                    self.respawn_quick = True
+                    self.log.write('  -> Delaying respawning')
+                    break
+
+            if self.verbosity:
+                self.log.write('</frame>')
+
+            return
+        finally:
+            # Do not leak the frame
+            del frame
 
         self.respawn_command()
 
@@ -395,7 +427,9 @@ class Monitor:
 
         # Main loop, monitor list of scheduled restarts
         while True:
-            time.sleep(self.main_loop_delay)
+            # Shorten loop if we received SIGCHLD while respawning commands
+            if not self.respawn_quick:
+                time.sleep(self.main_loop_delay)
             self.respawn_command()
 
         self.shutdown()
