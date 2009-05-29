@@ -34,7 +34,7 @@ WORKDIR = "/"
 MAXFD = 1024
 
 DFLT_PIDFILE = "/var/run/sl2d/sl2d.pid"
-DFLT_LOGFILE = "/var/log/sl2d/sl2d.log"
+DFLT_LOGPATH = "/var/log/sl2d/"
 DFLT_CONFFILE = "/etc/sl2d.conf"
 
 DFLT_MAIN_LOOP_DELAY = 15
@@ -126,6 +126,43 @@ def flatten(x):
             result.append(el)
     return result
 
+class MonitorLogger:
+
+    def __init__(self, section, logpath=None, debug_level=0):
+        """ Init method. """
+
+        self.logfile = ""
+        self.section = section
+
+        if logpath and os.path.exists(logpath) and os.path.isdir(logpath):
+            self.logfile = os.path.sep.join((logpath, section + '.log'))
+            self.log = sjutils.Logger2(self.logfile)
+            self.log.redirect_stdout_stderr()
+            self.closable = True
+        else:
+            # This is not portable but who cares ?
+            self.log = sjutils.Logger2('/dev/stdout')
+            self.closable = False
+
+        self.level = debug_level
+
+    def close(self):
+        """ Close whatever needs to be closed. """
+
+        if self.closable:
+            self.log.close()
+
+    def get_log_file(self):
+        """ Returns filename as appropriate. """
+
+        return self.closable and open(self.logfile, 'a') or open('/dev/stdout', 'a')
+
+    def write(self, level, message):
+        """ Write a message to the log file. """
+
+        if level <= self.level:
+            self.log.write('[%s] %s' % (self.section, message))
+
 class Monitor:
 
     def __init__(self, monitor_options):
@@ -139,16 +176,15 @@ class Monitor:
         self.respawn_min_delay = DFLT_RESPAWN_MIN_DELAY
         self.respawn_quick = False
         self.verbosity = monitor_options.verbosity
+        self.logpath = monitor_options.logpath
 
         self.daemon = not monitor_options.nodaemon
         if self.daemon:
-            self.log = sjutils.Logger2(monitor_options.logfile)
-            self.log.redirect_stdout_stderr()
+            self.log = MonitorLogger('sl2d', logpath=self.logpath, debug_level=self.verbosity)
         else:
-            # This is not portable but who cares ?
-            self.log = sjutils.Logger2('/dev/stdout')
+            self.log = MonitorLogger('sl2d', debug_level=self.verbosity)
 
-        self.log.write("*** sl2d version %s, init ***" % VERSION)
+        self.log.write(0, "*** sl2d version %s, init ***" % VERSION)
         self.parse_config(monitor_options.conffile)
 
         signal.signal(signal.SIGTERM, self.shutdown)
@@ -174,6 +210,12 @@ class Monitor:
             if section == "sl2d":
                 continue
 
+            # Prepare logger for this command
+            if self.daemon:
+                logger = MonitorLogger(section, logpath=self.logpath, debug_level=self.verbosity)
+            else:
+                logger = MonitorLogger(section, debug_level=self.verbosity)
+
             # There can only be push sections here
             # binary option must be defined
             command = [ [ options['binary'], '-v', '0'] ]
@@ -192,14 +234,14 @@ class Monitor:
                 cmd = options['precommand-%d' % cmd_id]
                 precommand += [ [arg for arg in cmd.split(' ') if arg] ]
                 cmd_id = cmd_id+1
-            self.log.write("[%s] found %d precommand(s)" % (section, len(precommand)))
+            logger.write(0, "found %d precommand(s)" % len(precommand))
 
             cmd_id = 1
             while 'postcommand-%d' % cmd_id in options:
                 cmd = options['postcommand-%d' % cmd_id]
                 postcommand += [ [arg for arg in cmd.split(' ') if arg] ]
                 cmd_id = cmd_id+1
-            self.log.write("[%s] found %d postcommand(s)" % (section, len(postcommand)))
+            logger.write(0, "found %d postcommand(s)" % len(postcommand))
 
             url_in = options.pop('url-in')
             url_out = options.pop('url-out')
@@ -218,34 +260,26 @@ class Monitor:
             self.commands += [{'pre': precommand,
                 'main': flatten(command),
                 'post': postcommand,
+                'logger': logger,
                 'section': section, }]
 
     def __print_process_status(self):
         """ Prints the status of process managed by sl2d. """
 
-        if self.verbosity:
-            self.log.write("Actually running commands (%d)" % len(self.process_list))
+        self.log.write(1, "Actually running commands (%d)" % len(self.process_list))
+        self.log.write(2, pprint.pformat(self.process_list))
+        for pid, process in self.process_list.iteritems():
+            self.log.write(1, '  * %d: %s' % (pid, process['command']['section']))
 
-        if self.verbosity > 1:
-            self.log.write(pprint.pformat(self.process_list))
-        elif self.verbosity > 0:
-            for pid, process in self.process_list.iteritems():
-                self.log.write('  * %d: %s' % (pid, process['command']['section']))
-
-        if self.verbosity:
-            self.log.write("Scheduled commands for respawn (%d)" % len(self.schedule))
-
-        if self.verbosity > 1:
-            self.log.write(pprint.pformat(self.schedule))
-        elif self.verbosity > 0:
-            for pid, process in self.schedule.iteritems():
-                self.log.write('  * %d: %s' % (pid, process['command']['section']))
+        self.log.write(1, "Scheduled commands for respawn (%d)" % len(self.schedule))
+        self.log.write(2, pprint.pformat(self.schedule))
+        for pid, process in self.schedule.iteritems():
+            self.log.write(1, '  * %d: %s' % (pid, process['command']['section']))
 
     def respawn_command(self):
         """ Restart scheduled commands. """
 
-        if self.verbosity:
-            self.log.write('<respawn_command>')
+        self.log.write(1, '<respawn_command>')
         self.__print_process_status()
 
         if self.respawn_quick:
@@ -258,24 +292,25 @@ class Monitor:
 
                 # Command failed too quickly, wait next round before respawning
                 if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
-                    self.log.write('[%s] command "%s" respawning too fast, delayed' % (command['section'], " ".join(command['main'])))
+                    self.log.write(0, '[%s] command "%s" respawning too fast, delayed' % (command['section'], " ".join(command['main'])))
+                    command['logger'].write(0, "respawning too fast, delayed")
                     continue
 
-                self.log.write('[%s] respawning "%s"' % (command['section'], ' '.join(command['main'])))
+                self.log.write(0, '[%s] respawning "%s"' % (command['section'], ' '.join(command['main'])))
+                command['logger'].write(0, 'respawning "%s"' % ' '.join(command['main']))
                 self.start_command(self.schedule[sched_item]['command'])
                 del self.schedule[sched_item]
             except KeyError:
-                self.log.write('Command that had PID:%d disappeared from the queue.' % sched_item)
+                self.log.write(0, 'Command that had PID:%d disappeared from the queue.' % sched_item)
 
         self.__print_process_status()
         if self.verbosity:
-            self.log.write('</respawn_command>')
+            self.log.write(1, '</respawn_command>')
 
     def child_shutdown(self, signum, frame):
         """ Respawn command on SIGCHLD. """
 
-        if self.verbosity:
-            self.log.write('Received SIGCHLD')
+        self.log.write(1, 'Received SIGCHLD')
 
         # Monitor status of running process
         for pid in self.process_list.keys():
@@ -284,31 +319,32 @@ class Monitor:
             if process.poll() is not None:
                 command = self.process_list[pid]['command']
 
-                self.log.write('[%s] Process %d: received signal %d' % (command['section'], pid, signum))
-                self.log.write('[%s] Process %d: died unexpectedly, error code is %d' % (command['section'], pid, process.poll()))
-                self.log.write('[%s] Process %d: said <%s>' % (command['section'], pid, process.stderr.read()))
+                self.log.write(0, '[%s] Process %d: received signal %d' % (command['section'], pid, signum))
+                self.log.write(0, '[%s] Process %d: died unexpectedly, error code is %d' % (command['section'], pid, process.poll()))
+                command['logger'].write(0, 'Process %d: received signal %d' % (pid, signum))
+                command['logger'].write(0, 'Process %d: died unexpectedly, error code is %d' % (pid, process.poll()))
                 process.stdin.close()
-                process.stdout.close()
-                process.stderr.close()
+                #process.stdout.close()
+                #process.stderr.close()
 
                 # Execute post commands if any and if command lived long enough.
                 # Do not wait for them and do not crash for them either.
                 if command['post'] and self.process_list[pid]['timestamp'] + 2 * self.respawn_min_delay > time.time() :
                     trash = os.open(REDIRECT_TO, os.O_RDWR)
-                    self.log.write('[%s] Process %d: spawning post-death commands' % (command['section'], pid))
+                    self.log.write(0, '[%s] Process %d: spawning post-death commands' % (command['section'], pid))
                     for postcmd in command['post']:
                         try:
-                            self.log.write('[%s] Process %d: post-death: <%s>' % (command['section'], pid, ' '.join(postcmd)))
+                            self.log.write(0, '[%s] Process %d: post-death: <%s>' % (command['section'], pid, ' '.join(postcmd)))
                             subprocess.Popen(postcmd, stdout=trash, stderr=trash)
                         except Exception:
-                            self.log.write('[%s] Process %d: post-death command <%s> failed' % (command['section'], pid, ' '.join(postcmd)))
+                            self.log.write(0, '[%s] Process %d: post-death command <%s> failed' % (command['section'], pid, ' '.join(postcmd)))
                     os.close(trash)
 
                 # Adding to the 'scheduled for restart' list unless we already
                 # did it ealier, somehow.
                 for check_pid in self.schedule:
                     if self.schedule[check_pid]['command']['section'] == command['section']:
-                        self.log.write('[%s] Trick to avoid duplicating commands' % command['section'])
+                        self.log.write(0, '[%s] Trick to avoid duplicating commands' % command['section'])
                         break
                 else:
                     self.schedule[pid] = {
@@ -322,24 +358,21 @@ class Monitor:
         # currently treating while not interfering with current execution of
         # respawn_command.
         try:
-            if self.verbosity:
-                self.log.write('<frame>')
-            if self.verbosity > 1:
-                self.log.write(pprint.pformat(inspect.getframeinfo(frame)))
+            self.log.write(1, '<frame>')
+            self.log.write(2, pprint.pformat(inspect.getframeinfo(frame)))
 
             for item in inspect.getouterframes(frame):
-                if self.verbosity > 1:
-                    self.log.write(pprint.pformat(item))
-                elif self.verbosity:
-                    self.log.write('  * function: ' + item[3])
+                self.log.write(2, pprint.pformat(item))
+                self.log.write(1, '  * function: ' + item[3])
 
                 if item[3] == "respawn_command":
                     self.respawn_quick = True
-                    self.log.write('  -> Delaying respawning')
+                    self.log.write(0, '[%s]  -> Delaying respawning', command['section'])
+                    command['logger'].write(0, '  -> Delaying respawning')
                     break
 
             if self.verbosity:
-                self.log.write('</frame>')
+                self.log.write(1, '</frame>')
 
             return
         finally:
@@ -358,7 +391,7 @@ class Monitor:
 
         death_loop = 0
         while len(self.process_list.keys()) > 0 and death_loop < 3:
-            self.log.write('%d process alive' % len(self.process_list.keys()))
+            self.log.write(0, '%d process alive' % len(self.process_list.keys()))
 
             for pid in self.process_list.keys():
                 # shutdown ffmpeg instances
@@ -368,8 +401,8 @@ class Monitor:
                     process.stdin.write('q')
                 else:
                     process.stdin.close()
-                    process.stdout.close()
-                    process.stderr.close()
+                    #process.stdout.close()
+                    #process.stderr.close()
                     del self.process_list[pid]
 
             death_loop = death_loop + 1
@@ -380,7 +413,7 @@ class Monitor:
             for pid in self.process_list.keys():
                 os.kill(pid, signal.SIGKILL)
 
-        self.log.write("*** sl2d terminated by signal %d ***" % signum)
+        self.log.write(0, "*** sl2d terminated by signal %d ***" % signum)
         self.log.close()
         if self.daemon:
             os.remove(options.pidfile)
@@ -391,32 +424,39 @@ class Monitor:
 
         if command['pre']:
             trash = os.open(REDIRECT_TO, os.O_RDWR)
-            self.log.write('[%s] spawning pre-running commands' % command['section'])
+            self.log.write(0, 'spawning pre-running commands for ' + command['section'])
+            command['logger'].write(0, 'spawning pre-running commands')
             for precmd in command['pre']:
                 try:
-                    self.log.write('[%s] pre-command "%s"' % (command['section'], ' '.join(precmd)))
+                    command['logger'].write(0, 'pre-command "%s"' % ' '.join(precmd))
                     preprocess = subprocess.Popen(precmd, stdout=trash, stderr=trash)
                     preprocess.wait()
                 except Exception:
-                    self.log.write('[%s] pre-command "%s" failed' % (command['section'], ' '.join(precmd)))
-                    self.log.write('[%s] this push will now stop' % command['section'])
+                    command['logger'].write(0, 'pre-command "%s" failed' % ' '.join(precmd))
+                    command['logger'].write(0, 'this push will now stop')
+                    self.log.write(0, '%s push will now stop due to failed precommand' % command['section'])
                     # pre-commands are mandatory, schedule and return if one failed
                     return None
             os.close(trash)
 
-        process = subprocess.Popen(command['main'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        command['logger'].write(0, 'starting')
+        process = subprocess.Popen(command['main'],
+            stdin=subprocess.PIPE,
+            stdout=command['logger'].get_log_file(),
+            stderr=subprocess.STDOUT)
+
         self.process_list[process.pid] = {
             'process': process,
             'command': command,
             'timestamp': time.time()}
-        self.log.write('[%s] starting "%s" as pid %d' % (command['section'], " ".join(command['main']), process.pid))
+        self.log.write(0, '[%s] starting "%s" as pid %d' % (command['section'], " ".join(command['main']), process.pid))
 
         return process.pid
 
     def run(self):
         """ Main function. """
 
-        self.log.write("*** sl2d version %s, started ***" % VERSION)
+        self.log.write(0, "*** sl2d version %s, started ***" % VERSION)
 
         # Bookkeeping our instanciations
         self.process_list = {}
@@ -486,10 +526,10 @@ if __name__ == "__main__":
     parser = optparse.OptionParser(
         version="%prog " + VERSION, option_list=[
         optparse.Option("-f", "--conf",       dest="conffile",  help="Define sl2d conf file", metavar="FILE", default=DFLT_CONFFILE),
-        optparse.Option("-l", "--log",        dest="logfile",   help="Define sl2d log file",  metavar="FILE", default=DFLT_LOGFILE),
-        optparse.Option("-p", "--pid",        dest="pidfile",   help="Define sl2d pid file",  metavar="FILE", default=DFLT_PIDFILE),
-        optparse.Option("-n", "--no-daemon",  dest="nodaemon",  help="Define sl2d log file",  action="store_true",  default=False),
-        optparse.Option("-v", "--verbose",    dest="verbosity", help="Define sl2d verbose level",  action="count", default=0)]
+        optparse.Option("-l", "--log",        dest="logpath",   help="Define sl2d log file path", metavar="PATH", default=DFLT_LOGPATH),
+        optparse.Option("-p", "--pid",        dest="pidfile",   help="Define sl2d pid file", metavar="FILE", default=DFLT_PIDFILE),
+        optparse.Option("-n", "--no-daemon",  dest="nodaemon",  help="Define sl2d log file", action="store_true", default=False),
+        optparse.Option("-v", "--verbose",    dest="verbosity", help="Define sl2d verbose level", action="count", default=0)]
         )
 
     (options, args) = parser.parse_args()
