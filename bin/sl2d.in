@@ -292,11 +292,11 @@ class Monitor:
 
                 # Command failed too quickly, wait next round before respawning
                 if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
-                    self.log.write(0, '[%s] command "%s" respawning too fast, delayed' % (command['section'], " ".join(command['main'])))
-                    command['logger'].write(0, "respawning too fast, delayed")
+                    self.log.write(0, '[%s] command respawning too fast, delayed' % (command['section']))
+                    command['logger'].write(0, '"%s" respawning too fast, delayed' %  " ".join(command['main']))
                     continue
 
-                self.log.write(0, '[%s] respawning "%s"' % (command['section'], ' '.join(command['main'])))
+                self.log.write(0, '[%s] respawning command' % command['section'])
                 command['logger'].write(0, 'respawning "%s"' % ' '.join(command['main']))
                 self.start_command(self.schedule[sched_item]['command'])
                 del self.schedule[sched_item]
@@ -334,10 +334,11 @@ class Monitor:
                     self.log.write(0, '[%s] Process %d: spawning post-death commands' % (command['section'], pid))
                     for postcmd in command['post']:
                         try:
-                            self.log.write(0, '[%s] Process %d: post-death: <%s>' % (command['section'], pid, ' '.join(postcmd)))
-                            subprocess.Popen(postcmd, stdout=trash, stderr=trash)
+                            command['logger'].write(0, 'Process %d: post-death command "%s"' % (pid, ' '.join(postcmd)))
+                            subprocess.Popen(postcmd, stdout=trash, stderr=STDOUT)
                         except Exception:
-                            self.log.write(0, '[%s] Process %d: post-death command <%s> failed' % (command['section'], pid, ' '.join(postcmd)))
+                            self.log.write(0, '[%s] post-death command failed', command['section'])
+                            command['logger'].write(0, '[%s] Process %d: post-death command "%s" failed' % (pid, ' '.join(postcmd)))
                     os.close(trash)
 
                 # Adding to the 'scheduled for restart' list unless we already
@@ -367,8 +368,7 @@ class Monitor:
 
                 if item[3] == "respawn_command":
                     self.respawn_quick = True
-                    self.log.write(0, '[%s]  -> Delaying respawning', command['section'])
-                    command['logger'].write(0, '  -> Delaying respawning')
+                    self.log.write(0, '  -> Delaying respawning')
                     break
 
             if self.verbosity:
@@ -423,23 +423,24 @@ class Monitor:
         """ Start command and store it in process_list for reference. """
 
         if command['pre']:
-            trash = os.open(REDIRECT_TO, os.O_RDWR)
-            self.log.write(0, 'spawning pre-running commands for ' + command['section'])
+            self.log.write(0, '[%s] spawning pre-running commands' % command['section'])
             command['logger'].write(0, 'spawning pre-running commands')
             for precmd in command['pre']:
                 try:
-                    command['logger'].write(0, 'pre-command "%s"' % ' '.join(precmd))
-                    preprocess = subprocess.Popen(precmd, stdout=trash, stderr=trash)
+                    command['logger'].write(0, 'pre-running command "%s"' % ' '.join(precmd))
+                    preprocess = subprocess.Popen(precmd,
+                        stdout=command['logger'].get_log_file(),
+                        stderr=subprocess.STDOUT)
                     preprocess.wait()
-                except Exception:
-                    command['logger'].write(0, 'pre-command "%s" failed' % ' '.join(precmd))
+                except Exception, error:
+                    command['logger'].write(0, 'pre-running command "%s" failed' % ' '.join(precmd))
+                    command['logger'].write(0, str(error))
                     command['logger'].write(0, 'this push will now stop')
-                    self.log.write(0, '%s push will now stop due to failed precommand' % command['section'])
+                    self.log.write(0, '%s push will now stop due to failed pre-running command' % command['section'])
                     # pre-commands are mandatory, schedule and return if one failed
                     return None
-            os.close(trash)
 
-        command['logger'].write(0, 'starting')
+        command['logger'].write(0, 'starting "%s"' % ' '.join(command['main']))
         process = subprocess.Popen(command['main'],
             stdin=subprocess.PIPE,
             stdout=command['logger'].get_log_file(),
@@ -449,7 +450,8 @@ class Monitor:
             'process': process,
             'command': command,
             'timestamp': time.time()}
-        self.log.write(0, '[%s] starting "%s" as pid %d' % (command['section'], " ".join(command['main']), process.pid))
+        self.log.write(0, '[%s] Process %d: started' % (command['section'], process.pid))
+        command['logger'].write(0, 'started "%s" as pid %d' % (" ".join(command['main']), process.pid))
 
         return process.pid
 
