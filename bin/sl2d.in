@@ -94,12 +94,18 @@ OPTIONS = {
     'video_crop_right':          'cropright',
     'video_crop_top':            'croptop',
     'video_crop_bottom':         'cropbottom',
+    'video_pad_left':            'padleft',
+    'video_pad_right':           'padright',
+    'video_pad_top':             'padtop',
+    'video_pad_bottom':          'padbottom',
+    'video_pad_color':           'padcolor',
 
     'audio_sync_method':         'async',
 }
 
 OPTIONS_SINGLE = {
     'video_copy_timestamps': 'copyts',
+    'video_deinterlace':     'deinterlace',
 }
 
 def flatten(x):

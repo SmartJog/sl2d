@@ -6,6 +6,7 @@ Version 0.2.4~dev
 	* Delay respawn_command execution in SIGCHLD handler, closes: #1971.
 	* Fix typo in sample configuration.
 	* Add logging per process support, closes: #1917.
+	* Add padding and deinterlace options.
 
 Version 0.2.3 Released on 2009/05/06
 
