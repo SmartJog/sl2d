@@ -441,9 +441,14 @@ class Monitor:
                 except Exception, error:
                     command['logger'].write(0, 'pre-running command "%s" failed' % ' '.join(precmd))
                     command['logger'].write(0, str(error))
-                    command['logger'].write(0, 'this push will now stop')
-                    self.log.write(0, '%s push will now stop due to failed pre-running command' % command['section'])
+                    command['logger'].write(0, 'scheduling for a retry')
+                    self.log.write(0, '[%s] pre-running command failed' % command['section'])
+
                     # pre-commands are mandatory, schedule and return if one failed
+                    self.schedule[time.time()] = {
+                        'command': command,
+                        'timestamp': time.time()}
+
                     return None
 
         command['logger'].write(0, 'starting "%s"' % ' '.join(command['main']))
