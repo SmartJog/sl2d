@@ -437,7 +437,10 @@ class Monitor:
                     preprocess = subprocess.Popen(precmd,
                         stdout=command['logger'].get_log_file(),
                         stderr=subprocess.STDOUT)
-                    preprocess.wait()
+
+                    if preprocess.wait() != 0:
+                        raise Exception('return code is %d' % preprocess.poll())
+
                 except Exception, error:
                     command['logger'].write(0, 'pre-running command "%s" failed' % ' '.join(precmd))
                     command['logger'].write(0, str(error))

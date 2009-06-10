@@ -10,6 +10,7 @@ Version 0.2.4~dev
 	* Update and split man pages.
 	* Do not abort trying to start a push when a pre-command fails,
 	  closes: #2006.
+	* Checks for the return value of pre-commands, refs: #2006.
 
 Version 0.2.3 Released on 2009/05/06
 
