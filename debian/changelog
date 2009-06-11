@@ -1,10 +1,14 @@
 sl2d (0.2.4~dev-1) unstable; urgency=low
 
+  [ Nicolas Noirbent ]
   * New upstream release.
   * Added myself as uploader.
   * Clean up useless rules.
 
- -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Wed, 20 May 2009 14:47:01 +0200
+  [ Gilles Dartiguelongue ]
+  * Add missing miscs:Depends dependency.
+
+ -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Thu, 11 Jun 2009 17:16:55 +0200
 
 sl2d (0.2.3-1) unstable; urgency=low
 
