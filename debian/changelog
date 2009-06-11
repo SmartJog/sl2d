@@ -7,6 +7,7 @@ sl2d (0.2.4~dev-1) unstable; urgency=low
 
   [ Gilles Dartiguelongue ]
   * Add missing miscs:Depends dependency.
+  * Add pycentral required rules.
 
  -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Thu, 11 Jun 2009 17:16:55 +0200
 
