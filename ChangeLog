@@ -1,6 +1,7 @@
 Version 0.3.0~dev
 
 	* Rewrite daemon option storage.
+	* Add support for reloading configuration on SIGUSR2, closes: #1643.
 
 Version 0.2.4 Released on 2009/06/11
 

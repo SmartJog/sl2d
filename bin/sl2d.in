@@ -201,11 +201,11 @@ class Monitor:
         signal.signal(signal.SIGTERM, self.shutdown)
         signal.signal(signal.SIGINT,  self.shutdown)
         signal.signal(signal.SIGCHLD, self.child_shutdown)
+        signal.signal(signal.SIGUSR2, self.reload_config)
 
-    def parse_config(self):
+    def parse_config(self, reload_config=False):
         """ Parse sl2d configuration file. """
 
-        self.commands = []
         config = ConfigParser.RawConfigParser()
         config.read(self.params['config'])
 
@@ -223,13 +223,19 @@ class Monitor:
             if section == "sl2d":
                 continue
 
-            # Prepare logger for this command
-            if self.daemon:
-                logger = MonitorLogger(section, \
-                    logpath=self.params['logpath'], \
-                    debug_level=self.params['verbosity'])
+            if not reload_config:
+                # Prepare logger for this command
+                if self.daemon:
+                    logger = MonitorLogger(section, \
+                        logpath=self.params['logpath'], \
+                        debug_level=self.params['verbosity'])
+                else:
+                    logger = MonitorLogger(section, debug_level=self.params['verbosity'])
             else:
-                logger = MonitorLogger(section, debug_level=self.params['verbosity'])
+                for cmd in self.commands:
+                    if cmd['section'] == section:
+                        logger = cmd['logger']
+                        break
 
             # There can only be push sections here
             # binary option must be defined
@@ -272,11 +278,54 @@ class Monitor:
                 if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
 
             command += [ url_out ]
-            self.commands += [{'pre': precommand,
+            command_item = {'pre': precommand,
                 'main': flatten(command),
                 'post': postcommand,
                 'logger': logger,
-                'section': section, }]
+                'section': section, }
+
+            if not reload_config:
+                self.commands.append(command_item)
+                continue
+
+            for cmd in self.commands:
+                if cmd['section'] == section and \
+                    hash(repr(command_item)) != hash(repr(cmd)):
+
+                    self.commands.append(command_item)
+                    self.commands.remove(cmd)
+                    logger.write(0, "configuration updated")
+                    self.log.write(0, "[%s] configuration updated" % section)
+
+                    # Update the push if it is in the respawn queue
+                    for pid in self.schedule.keys():
+                        if self.schedule[pid]['command']['section'] == section:
+                            self.schedule[pid]['command'] = command_item
+                            logger.write(0, "updating scheduled command")
+                            self.respawn_quick = True
+                            break
+
+                    # Update the push if it is currently running and kill
+                    # currently running process
+                    for pid in self.process_list.keys():
+                        if self.process_list[pid]['command']['section'] == section:
+                            self.process_list[pid]['command'] = command_item
+                            process = self.process_list[pid]['process']
+                            process.stdin.write('q')
+                            process.stdin.close()
+                            time.sleep(1)
+
+                            if process.poll():
+                                os.kill(pid, signal.SIGTERM)
+                                time.sleep(1)
+
+                            if process.poll():
+                                os.kill(pid, signal.SIGKILL)
+
+                            logger.write(0, "current instance killed")
+                            break
+
+                    break
 
     def __print_process_status(self):
         """ Prints the status of process managed by sl2d. """
@@ -320,6 +369,16 @@ class Monitor:
 
         self.__print_process_status()
         self.log.write(1, '</respawn_command>')
+
+    def reload_config(self, signum, frame):
+        """ Reload configuration on SIGUSR2. """
+
+        self.log.write(1, 'Received SIGUSR2')
+
+        if frame:
+            del frame
+
+        self.parse_config(reload_config=True)
 
     def child_shutdown(self, signum, frame):
         """ Respawn command on SIGCHLD. """
