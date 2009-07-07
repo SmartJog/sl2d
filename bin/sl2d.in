@@ -177,37 +177,44 @@ class Monitor:
         self.schedule = {}
         self.process_list = {}
         self.commands = []
-
-        self.main_loop_delay = DFLT_MAIN_LOOP_DELAY
-        self.respawn_min_delay = DFLT_RESPAWN_MIN_DELAY
         self.respawn_quick = False
-        self.verbosity = monitor_options.verbosity
-        self.logpath = monitor_options.logpath
+
+        self.params = {
+            'main_loop_delay': DFLT_MAIN_LOOP_DELAY,
+            'respawn_min_delay': DFLT_RESPAWN_MIN_DELAY,
+            'verbosity': monitor_options.verbosity,
+            'logpath': monitor_options.logpath,
+            'config': monitor_options.conffile,
+        }
 
         self.daemon = not monitor_options.nodaemon
         if self.daemon:
-            self.log = MonitorLogger('sl2d', logpath=self.logpath, debug_level=self.verbosity)
+            self.log = MonitorLogger('sl2d', \
+                logpath=self.params['logpath'], \
+                debug_level=self.params['verbosity'])
         else:
-            self.log = MonitorLogger('sl2d', debug_level=self.verbosity)
+            self.log = MonitorLogger('sl2d', debug_level=self.params['verbosity'])
 
         self.log.write(0, "*** sl2d version %s, init ***" % VERSION)
-        self.parse_config(monitor_options.conffile)
+        self.parse_config()
 
         signal.signal(signal.SIGTERM, self.shutdown)
         signal.signal(signal.SIGINT,  self.shutdown)
         signal.signal(signal.SIGCHLD, self.child_shutdown)
 
-    def parse_config(self, configfile):
+    def parse_config(self):
         """ Parse sl2d configuration file. """
 
         self.commands = []
         config = ConfigParser.RawConfigParser()
-        config.read(configfile)
+        config.read(self.params['config'])
 
         # Get the settings from the main section
         options = dict(config.items('sl2d'))
-        self.main_loop_delay = float(options['main_loop_delay'])
-        self.respawn_min_delay = float(options['respawn_min_delay'])
+        self.params.update({
+            'main_loop_delay': float(options['main_loop_delay']),
+            'respawn_min_delay': float(options['respawn_min_delay']),
+        })
 
         for section in config.sections():
             options = dict(config.items(section))
@@ -218,9 +225,11 @@ class Monitor:
 
             # Prepare logger for this command
             if self.daemon:
-                logger = MonitorLogger(section, logpath=self.logpath, debug_level=self.verbosity)
+                logger = MonitorLogger(section, \
+                    logpath=self.params['logpath'], \
+                    debug_level=self.params['verbosity'])
             else:
-                logger = MonitorLogger(section, debug_level=self.verbosity)
+                logger = MonitorLogger(section, debug_level=self.params['verbosity'])
 
             # There can only be push sections here
             # binary option must be defined
@@ -297,7 +306,7 @@ class Monitor:
                 command = self.schedule[sched_item]['command']
 
                 # Command failed too quickly, wait next round before respawning
-                if self.schedule[sched_item]['timestamp'] + self.respawn_min_delay > time.time():
+                if self.schedule[sched_item]['timestamp'] + self.params['respawn_min_delay'] > time.time():
                     self.log.write(0, '[%s] command respawning too fast, delayed' % (command['section']))
                     command['logger'].write(0, '"%s" respawning too fast, delayed' %  " ".join(command['main']))
                     continue
@@ -310,8 +319,7 @@ class Monitor:
                 self.log.write(0, 'Command that had PID:%d disappeared from the queue.' % sched_item)
 
         self.__print_process_status()
-        if self.verbosity:
-            self.log.write(1, '</respawn_command>')
+        self.log.write(1, '</respawn_command>')
 
     def child_shutdown(self, signum, frame):
         """ Respawn command on SIGCHLD. """
@@ -335,7 +343,7 @@ class Monitor:
 
                 # Execute post commands if any and if command lived long enough.
                 # Do not wait for them and do not crash for them either.
-                if command['post'] and self.process_list[pid]['timestamp'] + 2 * self.respawn_min_delay > time.time() :
+                if command['post'] and self.process_list[pid]['timestamp'] + 2 * self.params['respawn_min_delay'] > time.time() :
                     trash = os.open(REDIRECT_TO, os.O_RDWR)
                     self.log.write(0, '[%s] Process %d: spawning post-death commands' % (command['section'], pid))
                     for postcmd in command['post']:
@@ -377,8 +385,7 @@ class Monitor:
                     self.log.write(0, '  -> Delaying respawning')
                     break
 
-            if self.verbosity:
-                self.log.write(1, '</frame>')
+            self.log.write(1, '</frame>')
 
             return
         finally:
@@ -485,7 +492,7 @@ class Monitor:
         while True:
             # Shorten loop if we received SIGCHLD while respawning commands
             if not self.respawn_quick:
-                time.sleep(self.main_loop_delay)
+                time.sleep(self.params['main_loop_delay'])
             self.respawn_command()
 
         self.shutdown()
