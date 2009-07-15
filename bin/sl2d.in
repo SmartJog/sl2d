@@ -86,6 +86,7 @@ OPTIONS = {
     'video_me_method':           'me_method',
     'video_me_range':            'me_range',
     'video_cmp':                 'cmp',
+    'video_sub_cmp':             'subcmp',
     'video_sub_q':               'subq',
     'video_keyint_min':          'keyint_min',
     'video_sync_method':         'vsync',
