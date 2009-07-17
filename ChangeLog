@@ -4,6 +4,11 @@ Version 0.3.0~dev
 	* Add support for reloading configuration on SIGUSR2, closes: #1643.
 	* Add support for subcmp ffmpeg option, closes: #2176.
 
+Version 0.2.5 Released on 2009/07/17
+
+	* Fix unsafe usage of dictionaries in Monitor.__print_process_status,
+	  closes: #2219.
+
 Version 0.2.4 Released on 2009/06/11
 
 	* Fix scripts being distributed/installed without execution rights.

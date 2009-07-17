@@ -331,13 +331,19 @@ class Monitor:
     def __print_process_status(self):
         """ Prints the status of process managed by sl2d. """
 
-        self.log.write(1, "Actually running commands (%d)" % len(self.process_list))
-        self.log.write(2, pprint.pformat(self.process_list))
+        # Create a copy of process_list since it might chance while
+        # we are not looking
+        process_list = dict(self.process_list.items())
+        schedule = dict(self.schedule.items())
+
+        self.log.write(1, "Actually running commands (%d)" % len(process_list))
+        self.log.write(2, pprint.pformat(process_list))
         for pid, process in self.process_list.iteritems():
             self.log.write(1, '  * %d: %s' % (pid, process['command']['section']))
 
-        self.log.write(1, "Scheduled commands for respawn (%d)" % len(self.schedule))
-        self.log.write(2, pprint.pformat(self.schedule))
+        self.log.write(1, "Scheduled commands for respawn (%d)" % len(schedule))
+        self.log.write(2, pprint.pformat(schedule))
+
         for pid, process in self.schedule.iteritems():
             self.log.write(1, '  * %d: %s' % (pid, process['command']['section']))
 
