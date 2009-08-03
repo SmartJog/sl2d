@@ -528,11 +528,24 @@ class Monitor:
                     return None
 
         command['logger'].write(0, 'starting "%s"' % ' '.join(command['main']))
-        process = subprocess.Popen(command['main'],
-            stdin=subprocess.PIPE,
-            stdout=command['logger'].get_log_file(),
-            stderr=subprocess.STDOUT)
+        try:
+            process = subprocess.Popen(command['main'],
+                stdin=subprocess.PIPE,
+                stdout=command['logger'].get_log_file(),
+                stderr=subprocess.STDOUT)
+        except OSError, error:
+            command['logger'].write(0, 'command failed to start')
+            command['logger'].write(0, str(error))
+            command['logger'].write(0, 'scheduling for a retry')
+            self.log.write(0, '[%s] command failed to start' % command['section'])
 
+            self.schedule[time.time()] = {
+                'command': command,
+                'timestamp': time.time()}
+
+            return None
+
+        # Adding to the list of running process
         self.process_list[process.pid] = {
             'process': process,
             'command': command,
