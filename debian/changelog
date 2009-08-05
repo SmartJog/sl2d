@@ -1,9 +1,9 @@
-sl2d (0.3.0~dev-1) unstable; urgency=low
+sl2d (0.3.0-1) unstable; urgency=low
 
   * New upstream release.
   * Add support for reload.
 
- -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Tue, 07 Jul 2009 14:45:51 +0200
+ -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Wed, 05 Aug 2009 14:54:59 +0200
 
 sl2d (0.2.5-1) unstable; urgency=low
 
