@@ -289,6 +289,8 @@ class Monitor:
                 self.commands.append(command_item)
                 continue
 
+            self.log.write(0, 'reloading configuration')
+
             for cmd in self.commands:
                 if cmd['section'] == section and \
                     hash(repr(command_item)) != hash(repr(cmd)):
@@ -316,6 +318,51 @@ class Monitor:
                             break
 
                     break
+                elif cmd['section'] == section:
+                    logger.write(0, "configuration dit not change")
+                    self.log.write(0, "[%s] configuration dit not change" % section)
+                    break
+            else:
+                # New stream, add to the command list
+                self.commands.append(command_item)
+                self.schedule[time.time()] = {
+                    'command': command_item,
+                    'timestamp': 0,
+                }
+                self.log.write(0, "[%s] added to list" % section)
+
+        # Remove deleted commands
+        sections = config.sections()
+        for command in self.commands:
+            section = command['section']
+            if section in sections or section == 'sl2d':
+                continue
+
+            self.log.write(0, '[%s] has vanished from configuration' % section)
+
+            # Deleted stream, remove from command list
+            self.commands.remove(command)
+            self.log.write(0, '[%s] removed from list' % section)
+
+            # remove from scheduled for respawn list
+            for pid in self.schedule.keys():
+                if self.schedule[pid]['command']['section'] == section:
+                    try:
+                        del self.schedule[pid]
+                        self.log.write(0, '[%s] removed from respawn queue' % section)
+                    except KeyError:
+                        self.log.write(0, '[%s] escaped from respawn queue' % section)
+
+            # remove from currently running list
+            for pid in self.process_list.keys():
+                if self.process_list[pid]['command']['section'] == section:
+                    try:
+                        command = self.process_list[pid]
+                        del self.process_list[pid]
+                        self.stop_command(command)
+                        self.log.write(0, '[%s] removed from running process list' % section)
+                    except KeyError:
+                        self.log.write(0, '[%s] escaped from running process list' % section)
 
     def __print_process_status(self):
         """ Prints the status of process managed by sl2d. """
