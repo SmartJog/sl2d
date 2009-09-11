@@ -3,6 +3,8 @@ Version 0.3.1~dev
 	* Make sure logger is always set, refs: #2320.
 	* Add stop_command to stop running streams.
 	* Support addition and removal of new streams on reload, closes: #2320.
+	* Finer grained comparison to detect already running command changes,
+	  refs: #2320.
 
 Version 0.3.0 Released on 2009/08/05
 

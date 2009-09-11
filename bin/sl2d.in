@@ -293,7 +293,9 @@ class Monitor:
 
             for cmd in self.commands:
                 if cmd['section'] == section and \
-                    hash(repr(command_item)) != hash(repr(cmd)):
+                    (hash(repr(cmd['pre'])) != hash(repr(command_item['pre'])) or \
+                    hash(repr(cmd['main'])) != hash(repr(command_item['main'])) or \
+                    hash(repr(cmd['post'])) != hash(repr(command_item['post']))):
 
                     self.commands.append(command_item)
                     self.commands.remove(cmd)
