@@ -311,19 +311,8 @@ class Monitor:
                     for pid in self.process_list.keys():
                         if self.process_list[pid]['command']['section'] == section:
                             self.process_list[pid]['command'] = command_item
-                            process = self.process_list[pid]['process']
-                            process.stdin.write('q')
-                            process.stdin.close()
-                            time.sleep(1)
-
-                            if process.poll():
-                                os.kill(pid, signal.SIGTERM)
-                                time.sleep(1)
-
-                            if process.poll():
-                                os.kill(pid, signal.SIGKILL)
-
-                            logger.write(0, "current instance killed")
+                            self.stop_command(self.process_list[pid])
+                            self.respawn_quick = True
                             break
 
                     break
@@ -468,35 +457,44 @@ class Monitor:
 
         self.__print_process_status()
 
-        death_loop = 0
-        while len(self.process_list.keys()) > 0 and death_loop < 3:
-            self.log.write(0, '%d process alive' % len(self.process_list.keys()))
-
-            for pid in self.process_list.keys():
-                # shutdown ffmpeg instances
-                process = self.process_list[pid]['process']
-                ret = process.poll()
-                if ret is None:
-                    process.stdin.write('q')
-                else:
-                    process.stdin.close()
-                    #process.stdout.close()
-                    #process.stderr.close()
-                    del self.process_list[pid]
-
-            death_loop = death_loop + 1
-            time.sleep(2)
-
-        # Sick of waiting, slash 'em all
-        if death_loop > 3:
-            for pid in self.process_list.keys():
-                os.kill(pid, signal.SIGKILL)
+        # shutdown ffmpeg instances
+        for pid in self.process_list.iterkeys():
+            self.stop_command(self.process_list[pid])
 
         self.log.write(0, "*** sl2d terminated by signal %d ***" % signum)
         self.log.close()
         if self.daemon:
             os.remove(options.pidfile)
         sys.exit(os.EX_OK)
+
+    def stop_command(self, command):
+        """ Stop running command. """
+
+        process = command['process']
+
+        if not isinstance(process, subprocess.Popen):
+            return
+
+        if process.stdin and not process.stdin.closed:
+            self.log.write(0, '[%s] attempting shutdown of %d' %
+				(command['command']['section'], process.pid))
+            process.stdin.write('q')
+            time.sleep(1)
+
+        if process.poll() is None:
+            self.log.write(0, '[%s] sending SIGTERM' % command['command']['section'])
+            os.kill(process.pid, signal.SIGTERM)
+            time.sleep(1)
+
+        if process.poll() is None:
+            self.log.write(0, '[%s] sending SIGKILL' % command['command']['section'])
+            os.kill(process.pid, signal.SIGKILL)
+
+        process.wait()
+        if process.stdin and not process.stdin.closed:
+            process.stdin.close()
+
+        self.log.write(0, '[%s] stopped' % command['command']['section'])
 
     def start_command(self, command):
         """ Start command and store it in process_list for reference. """
