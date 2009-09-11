@@ -1,3 +1,9 @@
+sl2d (0.3.1~dev-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Gilles Dartiguelongue <gdartigu@smartjog.com>  Fri, 11 Sep 2009 12:04:00 +0200
+
 sl2d (0.3.0-1) unstable; urgency=low
 
   * New upstream release.

@@ -218,25 +218,25 @@ class Monitor:
         })
 
         for section in config.sections():
+            logger = None
             options = dict(config.items(section))
 
             # Skip [sl2d] since we took care of this earlier
             if section == "sl2d":
                 continue
 
-            if not reload_config:
-                # Prepare logger for this command
-                if self.daemon:
-                    logger = MonitorLogger(section, \
-                        logpath=self.params['logpath'], \
-                        debug_level=self.params['verbosity'])
-                else:
-                    logger = MonitorLogger(section, debug_level=self.params['verbosity'])
-            else:
+            # Prepare logger for this command
+            if reload_config:
                 for cmd in self.commands:
                     if cmd['section'] == section:
                         logger = cmd['logger']
                         break
+
+            if not logger:
+                self.log.write(0, '[%s] attaching a logger.' % section)
+                logger = MonitorLogger(section, \
+                    logpath=self.daemon and self.params['logpath'] or None, \
+                    debug_level=self.params['verbosity'])
 
             # There can only be push sections here
             # binary option must be defined
