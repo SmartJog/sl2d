@@ -1,4 +1,4 @@
-Version 0.3.1~dev
+Version 0.3.1 Released on 2009/09/11
 
 	* Make sure logger is always set, refs: #2320.
 	* Add stop_command to stop running streams.
