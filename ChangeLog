@@ -1,3 +1,7 @@
+Version 0.3.2~dev
+
+	* Dummy re-release for rebuild.
+
 Version 0.3.1 Released on 2009/09/11
 
 	* Make sure logger is always set, refs: #2320.
