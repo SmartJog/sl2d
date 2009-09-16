@@ -1,4 +1,4 @@
-Version 0.3.3~dev
+Version 0.3.3 Released on 2009/09/16
 
 	* Add aspect ratio support, closes: #2314.
 	* Crop options must precede size, refs: #2056.
