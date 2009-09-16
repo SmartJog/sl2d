@@ -270,6 +270,14 @@ class Monitor:
             url_out = options.pop('url-out')
             command += [ ["-i", url_in ] ]
 
+            # crop options must precede size
+            for crop in ['video_crop_top', 'video_crop_bottom', 'video_crop_left', 'video_crop_right']:
+                if crop in options:
+                    command += [ "-%s %s" % (OPTIONS[crop], options.pop(crop)) ]
+
+            if 'video_size' in options:
+                command += [ "-s %s" % options.pop('size') ]
+
             # Generate the rest of the command
             command += [ ['-' + OPTIONS[setting], value]
                 for (setting, value) in options.iteritems() if setting in OPTIONS]
