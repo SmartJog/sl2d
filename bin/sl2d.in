@@ -100,6 +100,7 @@ OPTIONS = {
     'video_pad_top':             'padtop',
     'video_pad_bottom':          'padbottom',
     'video_pad_color':           'padcolor',
+    'video_aspect':              'aspect',
 
     'audio_sync_method':         'async',
 }

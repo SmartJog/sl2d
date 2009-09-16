@@ -47,7 +47,8 @@ module in use. Currently the list of accepted optional parameters is:
 **video_crop_left**, **video_crop_right**, **video_crop_top**,
 **video_crop_bottom**, **audio_sync_method**, **video_copy_timestamps**,
 **video_pad_left**, **video_pad_right**, **video_pad_top**,
-**video_pad_bottom**, **video_pad_color**, **video_deinterlace**.
+**video_pad_bottom**, **video_pad_color**, **video_deinterlace**,
+**video_aspect**.
 For details about these options please read **ffmpeg**(1) and
 **sjconf-ffserver**(8).
 
