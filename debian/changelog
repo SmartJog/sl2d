@@ -1,3 +1,10 @@
+sl2d (0.3.4~dev-1) unstable; urgency=low
+
+  * New upstream release.
+  * Added myself as uploader.
+
+ -- Guillaume Camera <guillaume.camera@smartjog.com>  Tue, 06 Oct 2009 13:47:41 +0200
+
 sl2d (0.3.3-1) unstable; urgency=low
 
   * New upstream release.

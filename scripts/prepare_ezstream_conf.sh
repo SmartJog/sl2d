@@ -35,3 +35,5 @@ REPORT=$(cat > ${CONFFILE} <<EOF
 	<svrinfosamplerate>${SAMPLE_RATE}</svrinfosamplerate>
 </ezstream>
 EOF)
+
+chmod 644 ${CONFFILE}
