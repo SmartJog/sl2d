@@ -1,4 +1,4 @@
-sl2d (0.3.4~dev-1) unstable; urgency=low
+sl2d (0.3.4-1) unstable; urgency=low
 
   [ Guillaume Camera ]
   * Added myself as uploader.
@@ -8,7 +8,7 @@ sl2d (0.3.4~dev-1) unstable; urgency=low
   * Fixed typo in ${misc:Depends} in dependencies.
   * Bumped Standards Version to 3.8.3
 
- -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Wed, 28 Oct 2009 11:02:13 +0100
+ -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Wed, 28 Oct 2009 11:06:37 +0100
 
 sl2d (0.3.3-1) unstable; urgency=low
 
