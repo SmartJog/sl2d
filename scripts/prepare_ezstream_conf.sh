@@ -34,6 +34,7 @@ REPORT=$(cat > ${CONFFILE} <<EOF
 	<svrinfochannels>${CHANNELS}</svrinfochannels>
 	<svrinfosamplerate>${SAMPLE_RATE}</svrinfosamplerate>
 </ezstream>
-EOF)
+EOF
+)
 
 chmod 644 ${CONFFILE}

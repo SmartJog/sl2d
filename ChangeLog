@@ -2,6 +2,7 @@ Version 0.3.4~dev
 
 	* Prepare_ezstream_conf set 644 mode at the generated configuration, closes: #2426
 	* Nagios will now see the program as "sl2d", closes: #2267.
+	* Fix syntax error in the prepare_ezstream_conf.sh script, closes: #2537.
 
 Version 0.3.3 Released on 2009/09/16
 
