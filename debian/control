@@ -9,7 +9,7 @@ Standards-Version: 3.8.0
 
 Package: sl2d
 Architecture: all
-Depends: ${miscs:Depends}, ${python:Depends}, sjconf1 (>= 1.2.0)
+Depends: ${misc:Depends}, ${python:Depends}, sjconf1 (>= 1.2.0)
 XB-Python-Version: ${python:Versions}
 Recommends: sjconf-sl2d (>= 0.1)
 Description: streaming loader 2 daemon
