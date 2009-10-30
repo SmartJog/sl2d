@@ -278,6 +278,11 @@ class Monitor:
             if 'video_size' in options:
                 command += [ "-s %s" % options.pop('video_size') ]
 
+            # Bit rates need to be expressed in kilobytes
+            for bit_rate in ['audio_bit_rate', 'video_bit_rate']:
+                if bit_rate in options:
+                    command += ['-%s %sk' % (OPTIONS[crop], options.pop(crop))]
+
             # Generate the rest of the command
             command += [ ['-' + OPTIONS[setting], value]
                 for (setting, value) in options.iteritems() if setting in OPTIONS]

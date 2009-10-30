@@ -1,6 +1,7 @@
 Version 0.3.5~dev
 
 	* Fix stupid key error, closes: #2547
+	* Bit rates are now expressed in kbytes, closes: #2539
 
 Version 0.3.4 Released on 2009/10/28
 
