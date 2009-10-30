@@ -276,7 +276,7 @@ class Monitor:
                     command += [ "-%s %s" % (OPTIONS[crop], options.pop(crop)) ]
 
             if 'video_size' in options:
-                command += [ "-s %s" % options.pop('size') ]
+                command += [ "-s %s" % options.pop('video_size') ]
 
             # Generate the rest of the command
             command += [ ['-' + OPTIONS[setting], value]
