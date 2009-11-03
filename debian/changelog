@@ -1,9 +1,10 @@
-sl2d (0.3.5~dev) unstable; urgency=low
+sl2d (0.3.5-1) unstable; urgency=low
 
+  [ Clément Bœsch ]
   * New upstream release.
   * Added myself as uploader.
 
- -- Clément Bœsch <clement.boesch@smartjog.com>  Fri, 30 Oct 2009 17:41:45 +0100
+ -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Tue, 03 Nov 2009 10:54:40 +0100
 
 sl2d (0.3.4-1) unstable; urgency=low
 
