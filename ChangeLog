@@ -1,4 +1,4 @@
-Version 0.3.6~dev
+Version 0.3.6 Released on 2009/11/05
 
 	* Fix command line generation, closes: #2558.
 
