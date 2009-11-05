@@ -1,4 +1,4 @@
-AC_INIT(sl2d, 0.3.5)
+AC_INIT(sl2d, 0.3.6~dev)
 
 AC_PREREQ(2.59)
 

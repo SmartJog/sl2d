@@ -245,7 +245,7 @@ class Monitor:
 
             # Threads must go in first position to do any difference
             if 'threads' in options:
-                command += [ "-threads %s" % options.pop('threads') ]
+                command += [ ["-threads", options.pop('threads')] ]
 
             # pre and post commands are optional
             precommand = []
@@ -273,10 +273,10 @@ class Monitor:
             # crop options must precede size
             for crop in ['video_crop_top', 'video_crop_bottom', 'video_crop_left', 'video_crop_right']:
                 if crop in options:
-                    command += [ "-%s %s" % (OPTIONS[crop], options.pop(crop)) ]
+                    command += [ ['-' + OPTIONS[crop], options.pop(crop)] ]
 
             if 'video_size' in options:
-                command += [ "-s %s" % options.pop('video_size') ]
+                command += [ ['-s', options.pop('video_size')] ]
 
             # Bit rates need to be expressed in kilobytes
             for bit_rate in ['audio_bit_rate', 'video_bit_rate']:
@@ -284,7 +284,7 @@ class Monitor:
                     value = options.pop(bit_rate)
                     if not (value.endswith("k")):
                         value += "k"
-                    command += ['-%s %s' % (OPTIONS[bit_rate], value)]
+                    command += [ [ '-' + OPTIONS[bit_rate], value] ]
 
             # Generate the rest of the command
             command += [ ['-' + OPTIONS[setting], value]
