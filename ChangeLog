@@ -3,6 +3,8 @@ Version 0.3.7~dev
 	* Use parsed URL elements for POST request headers, closes: #2650.
 	* scripts/ffmpeg_pipe_push.sh: silence annoying kill messages.
 	* Avoid log write failures on daemon shutdown.
+	* Avoid a few more potentially recurring backtraces in daemon and
+	  scripts/push.py.
 
 Version 0.3.6 Released on 2009/11/05
 

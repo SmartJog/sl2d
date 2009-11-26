@@ -43,9 +43,12 @@ Connection: close\n\
 }
 
     sys.stderr.write("Sending data to %s %s %s.\n" % (host, port, path))
-    sock.connect((host, port))
-    sock.send(data)
-
+    try:
+        sock.connect((host, port))
+        sock.send(data)
+    except socket.error:
+        sys.stderr.write("Could not connect to remote host\n.")
+        sys.exit(1)
 
 def main():
     """ Main function. """
