@@ -523,6 +523,11 @@ class Monitor:
 
         self.__print_process_status()
 
+        # Avoid log write failures further down the line when receiving a signal
+        # since we are stopping anyway
+        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+        signal.signal(signal.SIGUSR2, signal.SIG_IGN)
+
         # shutdown ffmpeg instances
         for pid in self.process_list.iterkeys():
             self.stop_command(self.process_list[pid])
