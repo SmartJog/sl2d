@@ -21,10 +21,10 @@ def send_headers(sock, url):
             try:
                 port = int(port)
             except ValueError:
-                print "Invalid port number"
+                sys.stderr.write("Invalid port number.\n")
                 sys.exit(1)
     else:
-        print "Malformed URL", url
+        sys.stderr.write("Malformed URL %s.\n" % url)
         sys.exit(1)
 
     data = 'POST /%(path)s HTTP/1.1\n\
@@ -37,7 +37,7 @@ Connection: close\n\
 \n\
 ' % {'path' : path}
 
-    print "Sending data to", host, port, path
+    sys.stderr.write("Sending data to %s %s %s.\n" % (host, port, path))
     sock.connect((host, port))
     sock.send(data)
 
@@ -48,7 +48,7 @@ def main():
     try:
         timeout = int(sys.argv[1])
     except ValueError:
-        print "Invalid value for timeout"
+        sys.stderr.write("Invalid value for timeout.\n")
         sys.exit(1)
 
     # Initialize socket and remote host
@@ -80,7 +80,7 @@ def main():
             if len(input_buf) < max_buf:
                 read = sys.stdin.read()
                 if len(read) == 0:
-                    print "STDIN closed. Exiting"
+                    sys.stderr.write("STDIN closed. Exiting.\n")
                     sys.exit(1)
                 input_buf += read
 
@@ -89,13 +89,14 @@ def main():
                 sent = sock.send(input_buf[0:1024])
                 input_buf = input_buf[sent:]
             except Exception:
-                print "Got an exception while sending data"
+                sys.stderr.write("Got an exception while sending data.\n")
 
         if fds == ([], [], []):
-            sys.stderr.write("Pipe timeout (%s seconds)" % timeout)
+            sys.stderr.write("Pipe timeout (%s seconds).\n" % timeout)
             sys.stdin.flush()
             sys.stdin.close()
             sys.exit(2)
 
 if __name__ == '__main__':
     main()
+
