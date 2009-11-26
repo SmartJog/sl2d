@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import fcntl
 import os
@@ -6,7 +7,6 @@ import re
 import select
 import socket
 import sys
-import time
 
 def send_headers(sock, url):
     """ Send HTTP headers to @url@ through @sock@. """
@@ -16,7 +16,13 @@ def send_headers(sock, url):
         _, _, _, _, host, _, port, path = regex.groups()
 
         if not port:
-            port = 21
+            port = 80
+        else:
+            try:
+                port = int(port)
+            except ValueError:
+                print "Invalid port number"
+                sys.exit(1)
     else:
         print "Malformed URL", url
         sys.exit(1)
@@ -31,34 +37,33 @@ Connection: close\n\
 \n\
 ' % {'path' : path}
 
-    if port is None:
-        port = 80
-    else:
-        port = int(port)
-
     print "Sending data to", host, port, path
     sock.connect((host, port))
     sock.send(data)
 
+
 def main():
+    """ Main function. """
 
+    try:
+        timeout = int(sys.argv[1])
+    except ValueError:
+        print "Invalid value for timeout"
+        sys.exit(1)
 
-    timeout = int(sys.argv[1])
-
-    fcntl.fcntl(0, fcntl.F_SETFL, os.O_NONBLOCK)
-    fcntl.fcntl(1, fcntl.F_SETFL, os.O_NONBLOCK)
-
+    # Initialize socket and remote host
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     send_headers(sock, sys.argv[2])
-    sock.setblocking(False)
 
+    # Prepare streaming phase
+    sock.setblocking(False)
     fcntl.fcntl(0, fcntl.F_SETFL, os.O_NONBLOCK)
     fcntl.fcntl(1, fcntl.F_SETFL, os.O_NONBLOCK)
 
-    last = time.time()
     max_buf = 10000
     input_buf = ""
 
+    # Streaming loop
     while True:
         rlisten = []
         wlisten = []
@@ -79,14 +84,12 @@ def main():
                     sys.exit(1)
                 input_buf += read
 
-                last = time.time()
-
         if fds[1]:
             try:
                 sent = sock.send(input_buf[0:1024])
                 input_buf = input_buf[sent:]
             except Exception:
-                pass
+                print "Got an exception while sending data"
 
         if fds == ([], [], []):
             sys.stderr.write("Pipe timeout (%s seconds)" % timeout)

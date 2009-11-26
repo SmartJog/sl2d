@@ -11,7 +11,7 @@ do
 	FF_ARGS="${FF_ARGS} $arg"
 done
 
-/usr/bin/ffmpeg ${FF_ARGS} - |  /usr/share/sl2d/push.py 10 ${TARGET_URL}&
+/usr/bin/ffmpeg ${FF_ARGS} - | /usr/share/sl2d/push.py 10 ${TARGET_URL} &
 FFPID=`ps | grep '/usr/bin/ffmpeg' | awk '{ print $1 }'`
 wait $!
 kill -9 $FFPID
