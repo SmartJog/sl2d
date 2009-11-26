@@ -1,6 +1,6 @@
 Version 0.3.7~dev
 
-	* Dummy ChangeLog entry.
+	* Use parsed URL elements for POST request headers, closes: #2650.
 
 Version 0.3.6 Released on 2009/11/05
 

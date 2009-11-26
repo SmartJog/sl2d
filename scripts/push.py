@@ -8,7 +8,7 @@ import select
 import socket
 import sys
 
-def send_headers(sock, url):
+def send_headers(sock, url, agent='Lavf52.36.0'):
     """ Send HTTP headers to @url@ through @sock@. """
 
     regex = re.match('http://(([^:]+)(:(.*))?@)?([^/@:]+)(:([^/]+))?/(.*)', url)
@@ -28,14 +28,19 @@ def send_headers(sock, url):
         sys.exit(1)
 
     data = 'POST /%(path)s HTTP/1.1\n\
-User-Agent: Lavf52.36.0\n\
+User-Agent: %(agent)s\n\
 Accept: */*\n\
 Range: bytes=0-\n\
-Host: localhost:8080\n\
+Host: %(host)s:%(port)s\n\
 Authorization: Basic\n\
 Connection: close\n\
 \n\
-' % {'path' : path}
+' % {
+    'host' : host,
+    'port' : port,
+    'path' : path,
+    'agent': agent,
+}
 
     sys.stderr.write("Sending data to %s %s %s.\n" % (host, port, path))
     sock.connect((host, port))
