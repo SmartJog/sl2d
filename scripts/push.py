@@ -8,15 +8,17 @@ import socket
 import sys
 import time
 
-def main():
-    regex = re.match('http://(([^:]+)(:(.*))?@)?([^/@:]+)(:([^/]+))?/(.*)', sys.argv[2])
+def send_headers(sock, url):
+    """ Send HTTP headers to @url@ through @sock@. """
+
+    regex = re.match('http://(([^:]+)(:(.*))?@)?([^/@:]+)(:([^/]+))?/(.*)', url)
     if regex:
         _, _, _, _, host, _, port, path = regex.groups()
 
         if not port:
             port = 21
     else:
-        print "Malformed URL " + sys.argv[2]
+        print "Malformed URL", url
         sys.exit(1)
 
     data = 'POST /%(path)s HTTP/1.1\n\
@@ -29,22 +31,25 @@ Connection: close\n\
 \n\
 ' % {'path' : path}
 
-    timeout = int(sys.argv[1])
-
-    fcntl.fcntl(0, fcntl.F_SETFL, os.O_NONBLOCK)
-    fcntl.fcntl(1, fcntl.F_SETFL, os.O_NONBLOCK)
-
     if port is None:
         port = 80
     else:
         port = int(port)
 
-    print host, port, path
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+    print "Sending data to", host, port, path
     sock.connect((host, port))
     sock.send(data)
+
+def main():
+
+
+    timeout = int(sys.argv[1])
+
+    fcntl.fcntl(0, fcntl.F_SETFL, os.O_NONBLOCK)
+    fcntl.fcntl(1, fcntl.F_SETFL, os.O_NONBLOCK)
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    send_headers(sock, sys.argv[2])
     sock.setblocking(False)
 
     fcntl.fcntl(0, fcntl.F_SETFL, os.O_NONBLOCK)
