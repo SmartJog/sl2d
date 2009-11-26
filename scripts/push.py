@@ -57,8 +57,8 @@ def main():
 
     # Prepare streaming phase
     sock.setblocking(False)
-    fcntl.fcntl(0, fcntl.F_SETFL, os.O_NONBLOCK)
-    fcntl.fcntl(1, fcntl.F_SETFL, os.O_NONBLOCK)
+    fcntl.fcntl(sys.stdin, fcntl.F_SETFL, os.O_NONBLOCK)
+    fcntl.fcntl(sys.stdout, fcntl.F_SETFL, os.O_NONBLOCK)
 
     max_buf = 10000
     input_buf = ""
