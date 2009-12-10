@@ -1,4 +1,4 @@
-Version 0.3.7~dev
+Version 0.3.7 Released on 2009/12/10
 
 	* Use parsed URL elements for POST request headers, closes: #2650.
 	* scripts/ffmpeg_pipe_push.sh: silence annoying kill messages.

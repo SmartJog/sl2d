@@ -1,9 +1,9 @@
-sl2d (0.3.7~dev-1) unstable; urgency=low
+sl2d (0.3.7-1) unstable; urgency=low
 
   * New upstream release, closes: #2650.
   * Set Maintainer to Philippe Bridant.
 
- -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Thu, 10 Dec 2009 11:19:42 +0100
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Thu, 10 Dec 2009 11:25:42 +0100
 
 sl2d (0.3.6-1) unstable; urgency=low
 
