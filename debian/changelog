@@ -1,8 +1,12 @@
 sl2d (0.4.0~dev-1) unstable; urgency=low
 
+  [ Rémi Cardona ]
   * New upstream release, closes: #2245.
 
- -- Rémi Cardona <remi.cardona@smartjog.com>  Mon, 01 Feb 2010 12:07:16 +0100
+  [ Nicolas Noirbent ]
+  * Rotate logs in case they get bigger than 10M, closes: #2815.
+
+ -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Thu, 28 Jan 2010 18:10:26 +0100
 
 sl2d (0.3.7-1) unstable; urgency=low
 

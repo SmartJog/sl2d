@@ -1,5 +1,6 @@
 /var/log/sl2d/*.log {
 	weekly
+	size 10M
 	missingok
 	rotate 7
 	copytruncate
