@@ -338,8 +338,8 @@ class Monitor:
 
                     break
                 elif cmd['section'] == section:
-                    logger.write(0, "configuration dit not change")
-                    self.log.write(0, "[%s] configuration dit not change" % section)
+                    logger.write(0, "configuration did not change")
+                    self.log.write(0, "[%s] configuration did not change" % section)
                     break
             else:
                 # New stream, add to the command list
