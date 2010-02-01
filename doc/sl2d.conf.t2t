@@ -55,8 +55,20 @@ For details about these options please read **ffmpeg**(1) and
 : **url-in** = ""[""file:///dev/video0""]""
 The url of the input stream.
 
+: **url-in-param-1** = ""[""name""]""
+The name of the first parameter to be appended to **url-in**
+
+: **url-in-value-1** = ""[""value""]""
+The value of the first parameter to be appended to **url-in**
+
 : **url-out** = ""[""http://example.com:8090/output.ffm""]""
 The url of where to direct the stream to.
+
+: **url-out-param-1** = ""[""name""]""
+The name of the first parameter to be appended to **url-in**
+
+: **url-out-value-1** = ""[""value""]""
+The value of the first parameter to be appended to **url-in**
 
 : **binary** = ""[""ffmpeg""]""
 The name of the binary that will be passed to the module.

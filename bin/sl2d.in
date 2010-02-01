@@ -240,6 +240,23 @@ class Monitor:
 
         url_in = options.pop('url-in')
         url_out = options.pop('url-out')
+
+        param_id = 1
+        while 'url-in-param-%d' % param_id in options:
+            url_in += (param_id==1 and '?' or '&')
+            url_in += options['url-in-param-%d' % param_id]
+            if 'url-in-value-%d' % param_id in options:
+                url_in += '=%s' % options['url-in-value-%d' % param_id]
+            param_id = param_id+1
+
+        param_id = 1
+        while 'url-out-param-%d' % param_id in options:
+            url_out += (param_id==1 and '?' or '&')
+            url_out += options['url-out-param-%d' % param_id]
+            if 'url-out-value-%d' % param_id in options:
+                url_out += '=%s' % options['url-out-value-%d' % param_id]
+            param_id = param_id+1
+
         command += [ ["-i", url_in ] ]
 
         # crop options must precede size
