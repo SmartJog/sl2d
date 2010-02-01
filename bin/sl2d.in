@@ -205,6 +205,77 @@ class Monitor:
         signal.signal(signal.SIGCHLD, self.child_shutdown)
         signal.signal(signal.SIGUSR2, self.reload_config)
 
+    def parse_config_section(self, section, options, logger):
+        """ Parse a single configuration section.
+
+        Returns a 'command_item' dict that holds the commands that will be
+        executed later on. """
+
+        # There can only be push sections here
+        # binary option must be defined
+        command = [ [ options['binary'], '-v', '0'] ]
+
+        # Threads must go in first position to do any difference
+        if 'threads' in options:
+            command += [ ["-threads", options.pop('threads')] ]
+
+        # pre and post commands are optional
+        precommand = []
+        postcommand = []
+
+        # Extract pre/post commands if any
+        cmd_id = 1
+        while 'precommand-%d' % cmd_id in options:
+            cmd = options['precommand-%d' % cmd_id]
+            precommand += [ [arg for arg in cmd.split(' ') if arg] ]
+            cmd_id = cmd_id+1
+        logger.write(0, "found %d precommand(s)" % len(precommand))
+
+        cmd_id = 1
+        while 'postcommand-%d' % cmd_id in options:
+            cmd = options['postcommand-%d' % cmd_id]
+            postcommand += [ [arg for arg in cmd.split(' ') if arg] ]
+            cmd_id = cmd_id+1
+        logger.write(0, "found %d postcommand(s)" % len(postcommand))
+
+        url_in = options.pop('url-in')
+        url_out = options.pop('url-out')
+        command += [ ["-i", url_in ] ]
+
+        # crop options must precede size
+        for crop in ['video_crop_top', 'video_crop_bottom', 'video_crop_left', 'video_crop_right']:
+            if crop in options:
+                command += [ ['-' + OPTIONS[crop], options.pop(crop)] ]
+
+        if 'video_size' in options:
+            command += [ ['-s', options.pop('video_size')] ]
+
+        # Bit rates need to be expressed in kilobytes
+        for bit_rate in ['audio_bit_rate', 'video_bit_rate']:
+            if bit_rate in options:
+                value = options.pop(bit_rate)
+                if not (value.endswith("k")):
+                    value += "k"
+                command += [ [ '-' + OPTIONS[bit_rate], value] ]
+
+        # Generate the rest of the command
+        command += [ ['-' + OPTIONS[setting], value]
+            for (setting, value) in options.iteritems() if setting in OPTIONS]
+
+        # Single valued parameter
+        command += [ '-%s' % OPTIONS_SINGLE[setting]
+            for (setting, value) in options.iteritems()
+            if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
+
+        command += [ url_out ]
+        command_item = {'pre': precommand,
+            'main': flatten(command),
+            'post': postcommand,
+            'logger': logger,
+            'section': section, }
+
+        return command_item
+
     def parse_config(self, reload_config=False):
         """ Parse sl2d configuration file. """
 
@@ -239,68 +310,8 @@ class Monitor:
                     logpath=self.daemon and self.params['logpath'] or None, \
                     debug_level=self.params['verbosity'])
 
-            # There can only be push sections here
-            # binary option must be defined
-            command = [ [ options['binary'], '-v', '0'] ]
-
-            # Threads must go in first position to do any difference
-            if 'threads' in options:
-                command += [ ["-threads", options.pop('threads')] ]
-
-            # pre and post commands are optional
-            precommand = []
-            postcommand = []
-
-            # Extract pre/post commands if any
-            cmd_id = 1
-            while 'precommand-%d' % cmd_id in options:
-                cmd = options['precommand-%d' % cmd_id]
-                precommand += [ [arg for arg in cmd.split(' ') if arg] ]
-                cmd_id = cmd_id+1
-            logger.write(0, "found %d precommand(s)" % len(precommand))
-
-            cmd_id = 1
-            while 'postcommand-%d' % cmd_id in options:
-                cmd = options['postcommand-%d' % cmd_id]
-                postcommand += [ [arg for arg in cmd.split(' ') if arg] ]
-                cmd_id = cmd_id+1
-            logger.write(0, "found %d postcommand(s)" % len(postcommand))
-
-            url_in = options.pop('url-in')
-            url_out = options.pop('url-out')
-            command += [ ["-i", url_in ] ]
-
-            # crop options must precede size
-            for crop in ['video_crop_top', 'video_crop_bottom', 'video_crop_left', 'video_crop_right']:
-                if crop in options:
-                    command += [ ['-' + OPTIONS[crop], options.pop(crop)] ]
-
-            if 'video_size' in options:
-                command += [ ['-s', options.pop('video_size')] ]
-
-            # Bit rates need to be expressed in kilobytes
-            for bit_rate in ['audio_bit_rate', 'video_bit_rate']:
-                if bit_rate in options:
-                    value = options.pop(bit_rate)
-                    if not (value.endswith("k")):
-                        value += "k"
-                    command += [ [ '-' + OPTIONS[bit_rate], value] ]
-
-            # Generate the rest of the command
-            command += [ ['-' + OPTIONS[setting], value]
-                for (setting, value) in options.iteritems() if setting in OPTIONS]
-
-            # Single valued parameter
-            command += [ '-%s' % OPTIONS_SINGLE[setting]
-                for (setting, value) in options.iteritems()
-                if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
-
-            command += [ url_out ]
-            command_item = {'pre': precommand,
-                'main': flatten(command),
-                'post': postcommand,
-                'logger': logger,
-                'section': section, }
+            # Do the actual parsing
+            command_item = self.parse_config_section(section, options, logger)
 
             if not reload_config:
                 self.commands.append(command_item)
