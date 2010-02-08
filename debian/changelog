@@ -8,8 +8,9 @@ sl2d (0.4.0~dev-1) unstable; urgency=low
 
   [ Gilles Dartiguelongue ]
   * Add missing python-sjutils dependency.
+  * Updated dependency on python-sjutils (>= 1.14).
 
- -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Mon, 08 Feb 2010 17:25:52 +0100
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Mon, 08 Feb 2010 17:29:58 +0100
 
 sl2d (0.3.7-1) unstable; urgency=low
 
