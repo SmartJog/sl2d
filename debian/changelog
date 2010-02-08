@@ -6,7 +6,10 @@ sl2d (0.4.0~dev-1) unstable; urgency=low
   [ Nicolas Noirbent ]
   * Rotate logs in case they get bigger than 10M, closes: #2815.
 
- -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Thu, 28 Jan 2010 18:10:26 +0100
+  [ Gilles Dartiguelongue ]
+  * Add missing python-sjutils dependency.
+
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Mon, 08 Feb 2010 17:25:52 +0100
 
 sl2d (0.3.7-1) unstable; urgency=low
 
