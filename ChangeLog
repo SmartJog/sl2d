@@ -5,6 +5,7 @@ Version 0.4.0~dev
 	* Replace custom flatten by equivalent function from sjutils.
 	* Add support for setting environment variables for main command.
 	* Support network timeout variable, closes: #2791.
+	* Fix a syntax error triggered in exception handling of post-commands.
 
 Version 0.3.7 Released on 2009/12/10
 
