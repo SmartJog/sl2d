@@ -663,7 +663,8 @@ class Monitor:
                 time.sleep(self.params['main_loop_delay'])
             self.respawn_command()
 
-        self.shutdown()
+        # This code should never be reached
+        self.shutdown(signal.SIGTERM, None)
 
 def daemonize(options):
     """ Detach process from the controlling terminal and run it as a daemon. """
