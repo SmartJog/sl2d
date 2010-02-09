@@ -7,6 +7,7 @@ Version 0.4.0~dev
 	* Support network timeout variable, closes: #2791.
 	* Fix a syntax error triggered in exception handling of post-commands.
 	* Fix unreachable call to shutdown.
+	* Adapt scripts to network_timeout option, refs: #2791.
 
 Version 0.3.7 Released on 2009/12/10
 
