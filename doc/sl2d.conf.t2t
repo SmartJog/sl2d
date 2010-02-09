@@ -79,6 +79,9 @@ A command to execute before spawning a new instance of the stream.
 : **postcommand-1** = ""[""some_command some other arguments""]""
 A command to execute when a stream process died.
 
+: **network_timeout** = ""[""10000""]""
+The value in milliseconds that the main command should wait before dying when a
+network timeout occurs.
 
 = AUTHOR =
 

@@ -1,16 +1,14 @@
 sl2d (0.4.0~dev-1) unstable; urgency=low
 
-  [ Rémi Cardona ]
-  * New upstream release, closes: #2245.
-
   [ Nicolas Noirbent ]
   * Rotate logs in case they get bigger than 10M, closes: #2815.
 
   [ Gilles Dartiguelongue ]
   * Add missing python-sjutils dependency.
   * Updated dependency on python-sjutils (>= 1.14).
+  * New upstream release, closes: #2245, #2791.
 
- -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Mon, 08 Feb 2010 17:29:58 +0100
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 09 Feb 2010 12:40:38 +0100
 
 sl2d (0.3.7-1) unstable; urgency=low
 

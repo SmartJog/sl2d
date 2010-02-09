@@ -56,6 +56,9 @@ OPTIONS = {
     'refs':         'refs',
     'threads':      'threads',
 
+    # Network settings
+    'network_timeout': None,
+
     # Audio settings known by ffserver
     'audio_codec':       'acodec',
     'audio_volume':      'vol',
@@ -199,6 +202,11 @@ class Monitor:
         precommand = []
         postcommand = []
         env = {}
+
+        # Extract environment variables
+        if 'network_timeout' in options:
+            timeout = options.pop('network_timeout')
+            env += {'FF_TCP_OPTIONS': timeout, 'FF_UDP_OPTIONS': timeout}
 
         # Extract pre/post commands if any
         cmd_id = 1
