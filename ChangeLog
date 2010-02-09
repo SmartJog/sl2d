@@ -3,6 +3,7 @@ Version 0.4.0~dev
 	* Move command parsing into its own method to improve readability.
 	* Add support for url parameters in sl2d.conf, refs: #2245.
 	* Replace custom flatten by equivalent function from sjutils.
+	* Add support for setting environment variables for main command.
 
 Version 0.3.7 Released on 2009/12/10
 

@@ -198,6 +198,7 @@ class Monitor:
         # pre and post commands are optional
         precommand = []
         postcommand = []
+        env = {}
 
         # Extract pre/post commands if any
         cmd_id = 1
@@ -265,7 +266,9 @@ class Monitor:
             'main': sjutils.utils.flatten_list(command),
             'post': postcommand,
             'logger': logger,
-            'section': section, }
+            'section': section,
+            'env': env,
+        }
 
         return command_item
 
@@ -609,7 +612,8 @@ class Monitor:
             process = subprocess.Popen(command['main'],
                 stdin=subprocess.PIPE,
                 stdout=command['logger'].get_log_file(),
-                stderr=subprocess.STDOUT)
+                stderr=subprocess.STDOUT,
+                env=command['env'].update(os.environ))
         except OSError, error:
             command['logger'].write(0, 'command failed to start')
             command['logger'].write(0, str(error))
