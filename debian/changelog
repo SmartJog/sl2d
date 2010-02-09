@@ -7,8 +7,9 @@ sl2d (0.4.0~dev-1) unstable; urgency=low
   * Add missing python-sjutils dependency.
   * Updated dependency on python-sjutils (>= 1.14).
   * New upstream release, closes: #2245, #2791.
+  * Reload daemon after a log rotation so logs are not empty.
 
- -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 09 Feb 2010 12:40:38 +0100
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 09 Feb 2010 16:00:24 +0100
 
 sl2d (0.3.7-1) unstable; urgency=low
 

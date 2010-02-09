@@ -6,4 +6,7 @@
 	copytruncate
 	compress
 	notifempty
+	postrotate
+		invoke-rc.d --quiet sl2d reload > /dev/null
+	endscript
 }
