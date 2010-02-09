@@ -168,6 +168,7 @@ class Monitor:
             'config': monitor_options.conffile,
         }
 
+        self.pidfile = monitor_options.pidfile
         self.daemon = not monitor_options.nodaemon
         if self.daemon:
             self.log = MonitorLogger('sl2d', \
@@ -447,7 +448,7 @@ class Monitor:
         self.__print_process_status()
         self.log.write(1, '</respawn_command>')
 
-    def reload_config(self, signum, frame):
+    def reload_config(self, _signum, frame):
         """ Reload configuration on SIGUSR2. """
 
         self.log.write(1, 'Received SIGUSR2')
@@ -550,7 +551,7 @@ class Monitor:
         self.log.write(0, "*** sl2d terminated by signal %d ***" % signum)
         self.log.close()
         if self.daemon:
-            os.remove(options.pidfile)
+            os.remove(self.pidfile)
         sys.exit(os.EX_OK)
 
     def stop_command(self, command):
@@ -731,12 +732,12 @@ if __name__ == "__main__":
         optparse.Option("-v", "--verbose",    dest="verbosity", help="Define sl2d verbose level", action="count", default=0)]
         )
 
-    (options, args) = parser.parse_args()
+    (parsed_options, args) = parser.parse_args()
 
-    if not options.nodaemon:
-        retCode = daemonize(options)
+    if not parsed_options.nodaemon:
+        retCode = daemonize(parsed_options)
     else:
-        Monitor(options).run()
+        Monitor(parsed_options).run()
 
     sys.exit(retCode)
 
