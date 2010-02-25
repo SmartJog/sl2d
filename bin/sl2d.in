@@ -56,9 +56,6 @@ OPTIONS = {
     'refs':         'refs',
     'threads':      'threads',
 
-    # Network settings
-    'network_timeout': None,
-
     # Audio settings known by ffserver
     'audio_codec':       'acodec',
     'audio_volume':      'vol',
@@ -206,8 +203,11 @@ class Monitor:
 
         # Extract environment variables
         if 'network_timeout' in options:
-            timeout = options.pop('network_timeout')
-            env += {'FF_TCP_OPTIONS': timeout, 'FF_UDP_OPTIONS': timeout}
+            timeout = options['network_timeout']
+            env.update({
+                'FF_TCP_OPTIONS': "timeout=%s" % timeout,
+                'FF_UDP_OPTIONS': "timeout=%s" % timeout
+            })
 
         # Extract pre/post commands if any
         cmd_id = 1
@@ -618,11 +618,13 @@ class Monitor:
 
         command['logger'].write(0, 'starting "%s"' % ' '.join(command['main']))
         try:
+            env = command['env']
+            env.update(os.environ)
             process = subprocess.Popen(command['main'],
                 stdin=subprocess.PIPE,
                 stdout=command['logger'].get_log_file(),
                 stderr=subprocess.STDOUT,
-                env=command['env'].update(os.environ))
+                env=env)
         except OSError, error:
             command['logger'].write(0, 'command failed to start')
             command['logger'].write(0, str(error))
