@@ -83,6 +83,7 @@ A command to execute when a stream process died.
 The value in milliseconds that the main command should wait before dying when a
 network timeout occurs.
 
+
 = AUTHOR =
 
 The sl2d daemon and this manual page have been written by the **SmartJog** company.
