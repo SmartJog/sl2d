@@ -11,7 +11,7 @@ Package: sl2d
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, sjconf1 (>= 1.2.0), python-sjutils (>= 1.14)
 XB-Python-Version: ${python:Versions}
-Recommends: sjconf-sl2d (>= 0.1)
+Recommends: sjconf-sl2d (>= 0.4)
 Description: streaming loader 2 daemon
  streaming loader is a daemon that streams and transcodes content from/to
  ffserver.
