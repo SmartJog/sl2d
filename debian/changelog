@@ -1,10 +1,10 @@
 sl2d (0.4.1~dev-1) unstable; urgency=low
 
   [ Gilles Dartiguelongue ]
-  * New upstream release, closes: #2989, #2994.
+  * New upstream release, closes: #2989, #2994, #2993.
   * Updated sjconf-sl2d recommendation (>= 0.4).
 
- -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 02 Mar 2010 11:34:00 +0100
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 02 Mar 2010 11:39:38 +0100
 
 sl2d (0.4.0-1) unstable; urgency=low
 
