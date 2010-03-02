@@ -1,4 +1,4 @@
-Version 0.4.1~dev
+Version 0.4.1 Released on 2010/03/02
 
 	* Make "network_timeout" option actually work, closes: #2989.
 	* Add try/except around attempts to write to subprocess stdout,
