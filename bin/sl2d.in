@@ -565,7 +565,11 @@ class Monitor:
         if process.stdin and not process.stdin.closed:
             self.log.write(0, '[%s] attempting shutdown of %d' %
 				(command['command']['section'], process.pid))
-            process.stdin.write('q')
+            try:
+                process.stdin.write('q')
+            except IOError:
+                self.log.write(0, '[%s] could not write to %d pipe' %
+                    (command['command']['section'], process.pid))
             time.sleep(1)
 
         try:
