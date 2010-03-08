@@ -508,7 +508,12 @@ class Monitor:
                     self.schedule[pid] = {
                         'command': command,
                         'timestamp': self.process_list[pid]['timestamp']}
-                del self.process_list[pid]
+
+                try:
+                    del self.process_list[pid]
+                    self.log.write(0, '[%s] removed from running process list' % command['section'])
+                except KeyError:
+                    self.log.write(0, '[%s] escaped from running process list' % command['section'])
 
         # Inspect context to see if we are being run during respawn_command
         # execution. Set respawn_quick if necessary so that we will not
