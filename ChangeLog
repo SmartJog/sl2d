@@ -1,4 +1,4 @@
-Version 0.4.2~dev
+Version 0.4.2 Released on 2010/03/08
 
 	* Catch KeyError exception in child_shutdown, closes: #2999.
 
