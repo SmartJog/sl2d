@@ -4,3 +4,5 @@
 #LOGFILE=/var/log/sl2d/sl2d.log
 #CONFFILE=/etc/sl2d.conf
 #NICE=19
+# should be true or false ; anything else than 'true' is false
+#ENABLED=true
