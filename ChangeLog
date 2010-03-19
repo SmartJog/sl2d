@@ -1,6 +1,7 @@
 Version 0.4.3~dev
 
 	* Add en/disabling sl2d through /etc/default/sl2d, closes: #2997.
+	* Check for txt2tags in configure.
 
 Version 0.4.2 Released on 2010/03/08
 

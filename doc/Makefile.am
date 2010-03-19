@@ -6,4 +6,4 @@ EXTRA_DIST = sl2d.t2t sl2d.conf.t2t
 SUFFIXES = .t2t
 
 .t2t.man:
-	txt2tags -o $@ $<
+	$(TXT2TAGS) -o $@ $<

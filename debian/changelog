@@ -1,9 +1,12 @@
 sl2d (0.4.3~dev-1) unstable; urgency=low
 
-  * New upstream, closes: #2997
-  * Added myself to uploaders
+  [ Mathieu Dupuy ]
+  * Added myself to Uploaders.
 
- -- Mathieu Dupuy <mathieu.dupuy@smartjog.com>  Wed, 17 Mar 2010 16:20:55 +0100
+  [ Rémi Cardona ]
+  * New upstream release, closes: #2997.
+
+ -- Rémi Cardona <remi.cardona@smartjog.com>  Fri, 19 Mar 2010 17:46:55 +0100
 
 sl2d (0.4.2-1) unstable; urgency=low
 
