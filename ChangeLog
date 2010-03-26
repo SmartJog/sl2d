@@ -4,6 +4,8 @@ Version 0.4.3~dev
 	* Check for txt2tags in configure.
 	* Catch more KeyError cases, refs: #3027.
 	* ffmpeg_pipe_ezstream: add a default network timeout to ffmpeg.
+	* ffmpeg_pipe_ezstream, ffmpeg_pipe_push: wait children before
+	  exiting.
 
 Version 0.4.2 Released on 2010/03/08
 

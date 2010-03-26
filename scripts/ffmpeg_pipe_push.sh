@@ -9,3 +9,6 @@ if [ -z "$FF_UDP_OPTIONS" ]; then
 fi
 
 /usr/bin/ffmpeg $@
+
+echo "Waiting for subprocess termination"
+wait

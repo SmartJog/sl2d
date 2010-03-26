@@ -26,3 +26,6 @@ CONFFILE=/etc/ezstream/$(echo -n $TARGET_URL | md5sum | cut -f1 -d' ')
 
 /usr/bin/ffmpeg ${FF_ARGS} - |  ezstream -c ${CONFFILE} 2> /dev/null
 rm $CONFFILE
+
+echo "Waiting for subprocess termination"
+wait
