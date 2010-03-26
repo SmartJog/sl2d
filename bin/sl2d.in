@@ -337,20 +337,27 @@ class Monitor:
 
                     # Update the push if it is in the respawn queue
                     for pid in self.schedule.keys():
-                        if self.schedule[pid]['command']['section'] == section:
-                            self.schedule[pid]['command'] = command_item
-                            logger.write(0, "updating scheduled command")
-                            self.respawn_quick = True
-                            break
+                        try:
+                            if self.schedule[pid]['command']['section'] == section:
+                                self.schedule[pid]['command'] = command_item
+                                logger.write(0, "updating scheduled command")
+                                self.respawn_quick = True
+                                break
+                        except KeyError:
+                            self.log.write(0, 'PID %d escaped from respawn queue' % pid)
 
                     # Update the push if it is currently running and kill
                     # currently running process
                     for pid in self.process_list.keys():
-                        if self.process_list[pid]['command']['section'] == section:
-                            self.process_list[pid]['command'] = command_item
-                            self.stop_command(self.process_list[pid])
-                            self.respawn_quick = True
-                            break
+                        try:
+                            if self.process_list[pid]['command']['section'] == section:
+                                self.process_list[pid]['command'] = command_item
+                                self.stop_command(self.process_list[pid])
+                                self.respawn_quick = True
+                                break
+                        except KeyError:
+                            self.log.write(0, 'PID %d escaped from running process list' % pid)
+
 
                     break
                 elif cmd['section'] == section:
@@ -471,9 +478,13 @@ class Monitor:
 
         # Monitor status of running process
         for pid in self.process_list.keys():
-            process = self.process_list[pid]['process']
+            try:
+                process = self.process_list[pid]['process']
 
-            if process.poll() is not None:
+                if process.poll() is None:
+                    # This process is running, check the next one
+                    continue
+
                 command = self.process_list[pid]['command']
 
                 self.log.write(0, '[%s] Process %d: received signal %d' % (command['section'], pid, signum))
@@ -500,7 +511,7 @@ class Monitor:
 
                 # Adding to the 'scheduled for restart' list unless we already
                 # did it ealier, somehow.
-                for check_pid in self.schedule:
+                for check_pid in self.schedule.iterkeys():
                     if self.schedule[check_pid]['command']['section'] == command['section']:
                         self.log.write(0, '[%s] Trick to avoid duplicating commands' % command['section'])
                         break
@@ -509,11 +520,11 @@ class Monitor:
                         'command': command,
                         'timestamp': self.process_list[pid]['timestamp']}
 
-                try:
-                    del self.process_list[pid]
-                    self.log.write(0, '[%s] removed from running process list' % command['section'])
-                except KeyError:
-                    self.log.write(0, '[%s] escaped from running process list' % command['section'])
+                del self.process_list[pid]
+                self.log.write(0, '[%s] removed from running process list' % command['section'])
+
+            except KeyError:
+                self.log.write(0, 'PID %d escaped from running process list' % pid)
 
         # Inspect context to see if we are being run during respawn_command
         # execution. Set respawn_quick if necessary so that we will not
