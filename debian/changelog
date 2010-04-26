@@ -1,4 +1,4 @@
-sl2d (0.4.3~dev-1) unstable; urgency=low
+sl2d (0.4.3-1) unstable; urgency=low
 
   [ Mathieu Dupuy ]
   * Added myself to Uploaders.
@@ -7,7 +7,7 @@ sl2d (0.4.3~dev-1) unstable; urgency=low
   * New upstream release, closes: #2997.
   * Update packaging for Lenny.
 
- -- Rémi Cardona <remi.cardona@smartjog.com>  Fri, 19 Mar 2010 17:50:43 +0100
+ -- Rémi Cardona <remi.cardona@smartjog.com>  Mon, 26 Apr 2010 16:16:47 +0200
 
 sl2d (0.4.2-1) unstable; urgency=low
 
