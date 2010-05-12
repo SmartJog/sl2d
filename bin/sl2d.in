@@ -511,10 +511,15 @@ class Monitor:
 
                 # Adding to the 'scheduled for restart' list unless we already
                 # did it ealier, somehow.
-                for check_pid in self.schedule.iterkeys():
-                    if self.schedule[check_pid]['command']['section'] == command['section']:
-                        self.log.write(0, '[%s] Trick to avoid duplicating commands' % command['section'])
-                        break
+                for check_pid in self.schedule.keys():
+                    try:
+                        if self.schedule[check_pid]['command']['section'] == command['section']:
+                            self.log.write(0, '[%s] Trick to avoid duplicating commands' % command['section'])
+                            break
+                    except KeyError:
+                        # Command was removed from the scheduled commands for a
+                        # reason or another
+                        pass
                 else:
                     self.schedule[pid] = {
                         'command': command,

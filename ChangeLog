@@ -1,3 +1,8 @@
+Version 0.4.4~dev
+
+	* Fix RuntimeError due to changing dictionary while iterating over it,
+	  closes: #3157.
+
 Version 0.4.3
 
 	* Add en/disabling sl2d through /etc/default/sl2d, closes: #2997.
