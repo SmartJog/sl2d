@@ -23,13 +23,6 @@ import sjutils
 
 VERSION = "@PACKAGE_VERSION@"
 
-# Default daemon parameters.
-# File mode creation mask of the daemon.
-UMASK = 0
-
-# Default working directory for the daemon.
-WORKDIR = "/"
-
 # Default maximum for the number of available file descriptors.
 MAXFD = 1024
 
@@ -39,12 +32,6 @@ DFLT_CONFFILE = "/etc/sl2d.conf"
 
 DFLT_MAIN_LOOP_DELAY = 15
 DFLT_RESPAWN_MIN_DELAY = 5
-
-# The standard I/O file descriptors are redirected to /dev/null by default.
-if (hasattr(os, "devnull")):
-    REDIRECT_TO = os.devnull
-else:
-    REDIRECT_TO = "/dev/null"
 
 OPTIONS = {
     # Unclassified settings
@@ -503,7 +490,7 @@ class Monitor:
                 # Execute post commands if any and if command lived long enough.
                 # Do not wait for them and do not crash for them either.
                 if command['post'] and self.process_list[pid]['timestamp'] + 2 * self.params['respawn_min_delay'] > time.time() :
-                    trash = os.open(REDIRECT_TO, os.O_RDWR)
+                    trash = os.open(os.devnull, os.O_RDWR)
                     self.log.write(0, '[%s] Process %d: spawning post-death commands' % (command['section'], pid))
                     for postcmd in command['post']:
                         try:
@@ -743,7 +730,7 @@ def daemonize(options):
         except OSError:	# ERROR, fd wasn't open to begin with (ignored)
             pass
 
-    os.open(REDIRECT_TO, os.O_RDWR)	# standard input (0)
+    os.open(os.devnull, os.O_RDWR)	# standard input (0)
 
     # Duplicate standard input to standard output and standard error.
     os.dup2(0, 1)			# standard output (1)
