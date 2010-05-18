@@ -2,6 +2,7 @@ Version 0.4.4~dev
 
 	* Fix RuntimeError due to changing dictionary while iterating over it,
 	  closes: #3157.
+	* Add preliminary support for input parameters, refs: #3168.
 
 Version 0.4.3
 

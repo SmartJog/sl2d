@@ -243,6 +243,14 @@ class Monitor:
                 url_out += '=%s' % options['url-out-value-%d' % param_id]
             param_id = param_id+1
 
+        # input URL parameters (FIXME, some options are not handled like on
+        # the output side, compare with code below)
+        command += [ ['-' + OPTIONS[setting[len("input_"):]], value]
+            for (setting, value) in options.iteritems()
+            if setting.startswith("input_")
+            and setting[len("input_"):] in OPTIONS]
+
+        # input URL
         command += [ ["-i", url_in ] ]
 
         # crop options must precede size
