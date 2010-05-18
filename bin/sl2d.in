@@ -499,9 +499,6 @@ class Monitor:
                 self.log.write(0, '[%s] Process %d: died unexpectedly, error code is %d' % (command['section'], pid, process.poll()))
                 command['logger'].write(0, 'Process %d: received signal %d' % (pid, signum))
                 command['logger'].write(0, 'Process %d: died unexpectedly, error code is %d' % (pid, process.poll()))
-                process.stdin.close()
-                #process.stdout.close()
-                #process.stderr.close()
 
                 # Execute post commands if any and if command lived long enough.
                 # Do not wait for them and do not crash for them either.
@@ -597,16 +594,6 @@ class Monitor:
         if not isinstance(process, subprocess.Popen):
             return
 
-        if process.stdin and not process.stdin.closed:
-            self.log.write(0, '[%s] attempting shutdown of %d' %
-				(command['command']['section'], process.pid))
-            try:
-                process.stdin.write('q')
-            except IOError:
-                self.log.write(0, '[%s] could not write to %d pipe' %
-                    (command['command']['section'], process.pid))
-            time.sleep(1)
-
         try:
             if process.poll() is None:
                 self.log.write(0, '[%s] sending SIGTERM' % command['command']['section'])
@@ -618,8 +605,6 @@ class Monitor:
                 os.kill(process.pid, signal.SIGKILL)
 
             process.wait()
-            if process.stdin and not process.stdin.closed:
-                process.stdin.close()
 
         except OSError:
             self.log.write(0, '[%s] command already gone' % command['command']['section'])
@@ -635,9 +620,12 @@ class Monitor:
             for precmd in command['pre']:
                 try:
                     command['logger'].write(0, 'pre-running command "%s"' % ' '.join(precmd))
+                    trash = os.open(os.devnull, os.O_RDWR)
                     preprocess = subprocess.Popen(precmd,
+                        stdin=trash,
                         stdout=command['logger'].get_log_file(),
                         stderr=subprocess.STDOUT)
+                    os.close(trash)
 
                     if preprocess.wait() != 0:
                         raise Exception('return code is %d' % preprocess.poll())
@@ -659,11 +647,13 @@ class Monitor:
         try:
             env = command['env']
             env.update(os.environ)
+            trash = os.open(os.devnull, os.O_RDWR)
             process = subprocess.Popen(command['main'],
-                stdin=subprocess.PIPE,
+                stdin=trash,
                 stdout=command['logger'].get_log_file(),
                 stderr=subprocess.STDOUT,
                 env=env)
+            os.close(trash)
         except OSError, error:
             command['logger'].write(0, 'command failed to start')
             command['logger'].write(0, str(error))
