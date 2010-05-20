@@ -265,7 +265,11 @@ class Monitor:
             for (setting, value) in options.iteritems()
             if setting in OPTIONS_SINGLE and value in ('true', 'yes', 'on')]
 
+        if 'extra_params' in options:
+            command += [ [item for item in options['extra_params'].split(' ') if item ] ]
+
         command += [ url_out ]
+
         command_item = {'pre': precommand,
             'main': sjutils.utils.flatten_list(command),
             'post': postcommand,

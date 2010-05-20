@@ -5,6 +5,7 @@ Version 0.4.4 Released on 2010/05/25
 	* Add preliminary support for input parameters, refs: #3168.
 	* Don't open a pipe to ffmpeg's stdin to terminate it, use kill()
 	  directly, refs: #3186.
+	* Add support for extra_params parameters, refs: #2056.
 
 Version 0.4.3 Released on 2010/04/26
 
