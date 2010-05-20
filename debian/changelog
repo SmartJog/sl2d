@@ -2,8 +2,9 @@ sl2d (0.4.4~dev-1) unstable; urgency=low
 
   * New upstream release, closes: #3157.
   * Drop unused dependency on sjconf1.
+  * Fix "default" file to contain correct script parameters.
 
- -- Rémi Cardona <remi.cardona@smartjog.com>  Fri, 21 May 2010 12:05:51 +0200
+ -- Rémi Cardona <remi.cardona@smartjog.com>  Fri, 21 May 2010 12:09:31 +0200
 
 sl2d (0.4.3-1) unstable; urgency=low
 
