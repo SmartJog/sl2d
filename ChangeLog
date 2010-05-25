@@ -6,7 +6,7 @@ Version 0.4.4~dev
 	* Don't open a pipe to ffmpeg's stdin to terminate it, use kill()
 	  directly, refs: #3186.
 
-Version 0.4.3
+Version 0.4.3 Released on 2010/04/26
 
 	* Add en/disabling sl2d through /etc/default/sl2d, closes: #2997.
 	* Check for txt2tags in configure.
