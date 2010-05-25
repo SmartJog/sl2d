@@ -1,4 +1,4 @@
-Version 0.4.4~dev
+Version 0.4.4 Released on 2010/05/25
 
 	* Fix RuntimeError due to changing dictionary while iterating over it,
 	  closes: #3157.
