@@ -237,6 +237,9 @@ class Monitor:
             if setting.startswith("input_")
             and setting[len("input_"):] in OPTIONS]
 
+        if 'input_extra_params' in options:
+            command += [ [item for item in options['input_extra_params'].split(' ') if item ] ]
+
         # input URL
         command += [ ["-i", url_in ] ]
 

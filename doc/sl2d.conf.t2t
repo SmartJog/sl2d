@@ -82,6 +82,9 @@ A command to execute when a stream process died.
 : **extra_params** = ""[""some arguments""]""
 Some arguments to add at the end of the ffmpeg command.
 
+: **input_extra_params** = ""[""some arguments""]""
+Some arguments to add before input stream in ffmpeg command.
+
 : **network_timeout** = ""[""10000""]""
 The value in milliseconds that the main command should wait before dying when a
 network timeout occurs.
