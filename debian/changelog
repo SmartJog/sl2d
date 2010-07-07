@@ -1,8 +1,8 @@
-sl2d (0.4.5~dev-1) unstable; urgency=low
+sl2d (0.4.5-1) unstable; urgency=low
 
   * New upstream release, closes: #2056.
 
- -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Wed, 07 Jul 2010 14:44:39 +0200
+ -- Nicolas Noirbent <nicolas.noirbent@smartjog.com>  Wed, 07 Jul 2010 16:52:40 +0200
 
 sl2d (0.4.4-1) unstable; urgency=low
 

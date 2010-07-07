@@ -1,4 +1,4 @@
-Version 0.4.5~dev
+Version 0.4.5 Released on 2010/07/07
 
 	* Add support for extra_params parameters, refs: #2056.
 	* Add support for input_extra_params parameters, closes: #2056.
