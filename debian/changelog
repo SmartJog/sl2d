@@ -1,3 +1,9 @@
+sl2d (0.4.5-2~dev) unstable; urgency=low
+
+  * Change service start/stop values, closes: #3358.
+
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 24 Aug 2010 16:07:50 +0200
+
 sl2d (0.4.5-1) unstable; urgency=low
 
   * New upstream release, closes: #2056.
