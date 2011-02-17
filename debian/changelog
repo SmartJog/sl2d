@@ -1,3 +1,9 @@
+sl2d (0.5.0~dev-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Rémi Cardona <remi.cardona@smartjog.com>  Thu, 05 May 2011 15:28:40 +0200
+
 sl2d (0.4.5-2) unstable; urgency=low
 
   * Change service start/stop values, closes: #3358.

@@ -8,6 +8,9 @@
 
 
 import os
+import select
+import fcntl
+import errno
 import sys
 import optparse
 import resource
@@ -164,10 +167,21 @@ class Monitor:
         self.log.write(0, "*** sl2d version %s, init ***" % VERSION)
         self.parse_config()
 
+        # Create a pipe with a non-blocking read fd. The pipe will be used to
+        # 'emulate' a dumbed-down signalfd.
+        self.signalfd_r, self.signalfd_w = os.pipe()
+        signalfd_fl = fcntl.fcntl(self.signalfd_r, fcntl.F_GETFL)
+        fcntl.fcntl(self.signalfd_r, fcntl.F_SETFL, signalfd_fl | os.O_NONBLOCK)
+        self.poll = select.poll()
+        self.poll.register(self.signalfd_r)
+
         signal.signal(signal.SIGTERM, self.shutdown)
         signal.signal(signal.SIGINT,  self.shutdown)
-        signal.signal(signal.SIGCHLD, self.child_shutdown)
+        signal.signal(signal.SIGCHLD, self.sigchld_handler)
         signal.signal(signal.SIGUSR2, self.reload_config)
+
+    def sigchld_handler(self, _signum, _frame):
+        os.write(self.signalfd_w, "\0")
 
     def parse_config_section(self, section, options, logger):
         """ Parse a single configuration section.
@@ -535,25 +549,26 @@ class Monitor:
         # have to wait respawn_min_delay to respawn the command we are
         # currently treating while not interfering with current execution of
         # respawn_command.
-        try:
-            self.log.write(1, '<frame>')
-            self.log.write(2, pprint.pformat(inspect.getframeinfo(frame)))
+        if frame:
+            try:
+                self.log.write(1, '<frame>')
+                self.log.write(2, pprint.pformat(inspect.getframeinfo(frame)))
 
-            for item in inspect.getouterframes(frame):
-                self.log.write(2, pprint.pformat(item))
-                self.log.write(1, '  * function: ' + item[3])
+                for item in inspect.getouterframes(frame):
+                    self.log.write(2, pprint.pformat(item))
+                    self.log.write(1, '  * function: ' + item[3])
 
-                if item[3] == "respawn_command":
-                    self.respawn_quick = True
-                    self.log.write(0, '  -> Delaying respawning')
-                    break
+                    if item[3] == "respawn_command":
+                        self.respawn_quick = True
+                        self.log.write(0, '  -> Delaying respawning')
+                        break
 
-            self.log.write(1, '</frame>')
+                self.log.write(1, '</frame>')
 
-            return
-        finally:
-            # Do not leak the frame
-            del frame
+                return
+            finally:
+                # Do not leak the frame
+                del frame
 
         self.respawn_command()
 
@@ -670,6 +685,43 @@ class Monitor:
 
         return process.pid
 
+    def _poll_no_intr(self, pollobj, timeout=None):
+        """Like select.poll.poll(), but retries on EINTR"""
+        while True:
+            try:
+                return pollobj.poll(timeout)
+            except select.error, exc:
+                if exc[0] == errno.EINTR:
+                    continue
+                else:
+                    raise
+
+    def _read_no_intr(self, fd, buffersize):
+        """Like os.read, but retries on EINTR"""
+        while True:
+            try:
+                return os.read(fd, buffersize)
+            except select.error, exc:
+                if exc[0] == errno.EINTR:
+                    continue
+                else:
+                    raise
+            except OSError, exc:
+                if exc.errno == errno.EAGAIN or exc.errno == errno.EWOULDBLOCK:
+                    return ""
+                else:
+                    raise
+
+    def _read_all(self, fd, buffersize):
+        """Like os.read, but retries on EINTR, and reads until EOF"""
+        all = ""
+        while True:
+            data = self._read_no_intr(fd, buffersize)
+            all += data
+            if data == "":
+                return all
+
+
     def run(self):
         """ Main function. """
 
@@ -684,9 +736,11 @@ class Monitor:
 
         # Main loop, monitor list of scheduled restarts
         while True:
-            # Shorten loop if we received SIGCHLD while respawning commands
-            if not self.respawn_quick:
-                time.sleep(self.params['main_loop_delay'])
+            fdlist = self._poll_no_intr(self.poll, self.params['main_loop_delay'] * 1000)
+            for pollfd, pollevent in fdlist:
+                if pollevent & select.POLLIN:
+                    self._read_all(pollfd, 10)
+            self.child_shutdown(signal.SIGCHLD, None)
             self.respawn_command()
 
         # This code should never be reached
