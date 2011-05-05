@@ -1,4 +1,4 @@
-Version 0.5.0~dev
+Version 0.5.0 Released on 2011/05/05
 
 	* Use a pipe to send SIGCHILD events to a newly-created main loop.
 	* Drop all KeyError exception handling.
