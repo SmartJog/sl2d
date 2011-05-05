@@ -1,5 +1,1 @@
-SUBDIRS = doc etc scripts
-
-dist_bin_SCRIPTS = bin/sl2d
-
-EXTRA_DIST = bin/sl2d.in
+SUBDIRS = bin doc etc scripts share

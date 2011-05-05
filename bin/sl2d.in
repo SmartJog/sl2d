@@ -19,10 +19,16 @@ import time
 import signal
 import pprint
 import inspect
-import subprocess
 import ConfigParser
-
 import sjutils
+
+sys.path.insert(1, '@pkgdatadir@/')
+
+if sys.version_info < (2, 6):
+    import subprocess26 as subprocess
+else:
+    import subprocess
+
 
 VERSION = "@PACKAGE_VERSION@"
 
