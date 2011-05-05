@@ -353,27 +353,20 @@ class Monitor:
 
                     # Update the push if it is in the respawn queue
                     for pid in self.schedule.keys():
-                        try:
-                            if self.schedule[pid]['command']['section'] == section:
-                                self.schedule[pid]['command'] = command_item
-                                logger.write(0, "updating scheduled command")
-                                self.respawn_quick = True
-                                break
-                        except KeyError:
-                            self.log.write(0, 'PID %d escaped from respawn queue' % pid)
+                        if self.schedule[pid]['command']['section'] == section:
+                            self.schedule[pid]['command'] = command_item
+                            logger.write(0, "updating scheduled command")
+                            self.respawn_quick = True
+                            break
 
                     # Update the push if it is currently running and kill
                     # currently running process
                     for pid in self.process_list.keys():
-                        try:
-                            if self.process_list[pid]['command']['section'] == section:
-                                self.process_list[pid]['command'] = command_item
-                                self.stop_command(self.process_list[pid])
-                                self.respawn_quick = True
-                                break
-                        except KeyError:
-                            self.log.write(0, 'PID %d escaped from running process list' % pid)
-
+                        if self.process_list[pid]['command']['section'] == section:
+                            self.process_list[pid]['command'] = command_item
+                            self.stop_command(self.process_list[pid])
+                            self.respawn_quick = True
+                            break
 
                     break
                 elif cmd['section'] == section:
@@ -405,22 +398,16 @@ class Monitor:
             # remove from scheduled for respawn list
             for pid in self.schedule.keys():
                 if self.schedule[pid]['command']['section'] == section:
-                    try:
-                        del self.schedule[pid]
-                        self.log.write(0, '[%s] removed from respawn queue' % section)
-                    except KeyError:
-                        self.log.write(0, '[%s] escaped from respawn queue' % section)
+                    del self.schedule[pid]
+                    self.log.write(0, '[%s] removed from respawn queue' % section)
 
             # remove from currently running list
             for pid in self.process_list.keys():
                 if self.process_list[pid]['command']['section'] == section:
-                    try:
-                        command = self.process_list[pid]
-                        del self.process_list[pid]
-                        self.stop_command(command)
-                        self.log.write(0, '[%s] removed from running process list' % section)
-                    except KeyError:
-                        self.log.write(0, '[%s] escaped from running process list' % section)
+                    command = self.process_list[pid]
+                    del self.process_list[pid]
+                    self.stop_command(command)
+                    self.log.write(0, '[%s] removed from running process list' % section)
 
     def __print_process_status(self):
         """ Prints the status of process managed by sl2d. """
@@ -433,19 +420,13 @@ class Monitor:
         self.log.write(1, "Actually running commands (%d)" % len(process_list))
         self.log.write(2, pprint.pformat(process_list))
         for pid in self.process_list.keys():
-            try:
-                self.log.write(1, '  * %d: %s' % (pid, self.process_list[pid]['command']['section']))
-            except KeyError:
-                self.log.write(1, '  * %d: vanished' % pid)
+            self.log.write(1, '  * %d: %s' % (pid, self.process_list[pid]['command']['section']))
 
         self.log.write(1, "Scheduled commands for respawn (%d)" % len(schedule))
         self.log.write(2, pprint.pformat(schedule))
 
         for pid in self.schedule.keys():
-            try:
-                self.log.write(1, '  * %d: %s' % (pid, self.schedule[pid]['command']['section']))
-            except KeyError:
-                self.log.write(1, '  * %d: vanished' % pid)
+            self.log.write(1, '  * %d: %s' % (pid, self.schedule[pid]['command']['section']))
 
     def respawn_command(self):
         """ Restart scheduled commands. """
@@ -458,21 +439,18 @@ class Monitor:
 
         for sched_item in self.schedule.keys():
 
-            try:
-                command = self.schedule[sched_item]['command']
+            command = self.schedule[sched_item]['command']
 
-                # Command failed too quickly, wait next round before respawning
-                if self.schedule[sched_item]['timestamp'] + self.params['respawn_min_delay'] > time.time():
-                    self.log.write(0, '[%s] command respawning too fast, delayed' % (command['section']))
-                    command['logger'].write(0, '"%s" respawning too fast, delayed' %  " ".join(command['main']))
-                    continue
+            # Command failed too quickly, wait next round before respawning
+            if self.schedule[sched_item]['timestamp'] + self.params['respawn_min_delay'] > time.time():
+                self.log.write(0, '[%s] command respawning too fast, delayed' % (command['section']))
+                command['logger'].write(0, '"%s" respawning too fast, delayed' %  " ".join(command['main']))
+                continue
 
-                self.log.write(0, '[%s] respawning command' % command['section'])
-                command['logger'].write(0, 'respawning "%s"' % ' '.join(command['main']))
-                self.start_command(self.schedule[sched_item]['command'])
-                del self.schedule[sched_item]
-            except KeyError:
-                self.log.write(0, 'Command that had PID:%d disappeared from the queue.' % sched_item)
+            self.log.write(0, '[%s] respawning command' % command['section'])
+            command['logger'].write(0, 'respawning "%s"' % ' '.join(command['main']))
+            self.start_command(self.schedule[sched_item]['command'])
+            del self.schedule[sched_item]
 
         self.__print_process_status()
         self.log.write(1, '</respawn_command>')
@@ -494,55 +472,46 @@ class Monitor:
 
         # Monitor status of running process
         for pid in self.process_list.keys():
-            try:
-                process = self.process_list[pid]['process']
+            process = self.process_list[pid]['process']
 
-                if process.poll() is None:
-                    # This process is running, check the next one
-                    continue
+            if process.poll() is None:
+                # This process is running, check the next one
+                continue
 
-                command = self.process_list[pid]['command']
+            command = self.process_list[pid]['command']
 
-                self.log.write(0, '[%s] Process %d: received signal %d' % (command['section'], pid, signum))
-                self.log.write(0, '[%s] Process %d: died unexpectedly, error code is %d' % (command['section'], pid, process.poll()))
-                command['logger'].write(0, 'Process %d: received signal %d' % (pid, signum))
-                command['logger'].write(0, 'Process %d: died unexpectedly, error code is %d' % (pid, process.poll()))
+            self.log.write(0, '[%s] Process %d: received signal %d' % (command['section'], pid, signum))
+            self.log.write(0, '[%s] Process %d: died unexpectedly, error code is %d' % (command['section'], pid, process.poll()))
+            command['logger'].write(0, 'Process %d: received signal %d' % (pid, signum))
+            command['logger'].write(0, 'Process %d: died unexpectedly, error code is %d' % (pid, process.poll()))
 
-                # Execute post commands if any and if command lived long enough.
-                # Do not wait for them and do not crash for them either.
-                if command['post'] and self.process_list[pid]['timestamp'] + 2 * self.params['respawn_min_delay'] > time.time() :
-                    trash = os.open(os.devnull, os.O_RDWR)
-                    self.log.write(0, '[%s] Process %d: spawning post-death commands' % (command['section'], pid))
-                    for postcmd in command['post']:
-                        try:
-                            command['logger'].write(0, 'Process %d: post-death command "%s"' % (pid, ' '.join(postcmd)))
-                            subprocess.Popen(postcmd, stdout=trash, stderr=subprocess.STDOUT)
-                        except Exception:
-                            self.log.write(0, '[%s] post-death command failed' % command['section'])
-                            command['logger'].write(0, '[%s] Process %d: post-death command "%s" failed' % (pid, ' '.join(postcmd)))
-                    os.close(trash)
-
-                # Adding to the 'scheduled for restart' list unless we already
-                # did it ealier, somehow.
-                for check_pid in self.schedule.keys():
+            # Execute post commands if any and if command lived long enough.
+            # Do not wait for them and do not crash for them either.
+            if command['post'] and self.process_list[pid]['timestamp'] + 2 * self.params['respawn_min_delay'] > time.time() :
+                trash = os.open(os.devnull, os.O_RDWR)
+                self.log.write(0, '[%s] Process %d: spawning post-death commands' % (command['section'], pid))
+                for postcmd in command['post']:
                     try:
-                        if self.schedule[check_pid]['command']['section'] == command['section']:
-                            self.log.write(0, '[%s] Trick to avoid duplicating commands' % command['section'])
-                            break
-                    except KeyError:
-                        # Command was removed from the scheduled commands for a
-                        # reason or another
-                        pass
-                else:
-                    self.schedule[pid] = {
-                        'command': command,
-                        'timestamp': self.process_list[pid]['timestamp']}
+                        command['logger'].write(0, 'Process %d: post-death command "%s"' % (pid, ' '.join(postcmd)))
+                        subprocess.Popen(postcmd, stdout=trash, stderr=subprocess.STDOUT)
+                    except Exception:
+                        self.log.write(0, '[%s] post-death command failed' % command['section'])
+                        command['logger'].write(0, '[%s] Process %d: post-death command "%s" failed' % (pid, ' '.join(postcmd)))
+                os.close(trash)
 
-                del self.process_list[pid]
-                self.log.write(0, '[%s] removed from running process list' % command['section'])
+            # Adding to the 'scheduled for restart' list unless we already
+            # did it ealier, somehow.
+            for check_pid in self.schedule.keys():
+                if self.schedule[check_pid]['command']['section'] == command['section']:
+                    self.log.write(0, '[%s] Trick to avoid duplicating commands' % command['section'])
+                    break
+            else:
+                self.schedule[pid] = {
+                    'command': command,
+                    'timestamp': self.process_list[pid]['timestamp']}
 
-            except KeyError:
-                self.log.write(0, 'PID %d escaped from running process list' % pid)
+            del self.process_list[pid]
+            self.log.write(0, '[%s] removed from running process list' % command['section'])
 
         # Inspect context to see if we are being run during respawn_command
         # execution. Set respawn_quick if necessary so that we will not
