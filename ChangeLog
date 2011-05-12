@@ -1,6 +1,7 @@
 Version 0.6.0~dev
 
 	* Reduce CPU usage when watching a lot of processes, closes: #4271.
+	* Reduce shutdown time, closes: #4270.
 
 Version 0.5.0 Released on 2011/05/05
 

@@ -368,7 +368,7 @@ class Monitor:
                     for pid in self.process_list.keys():
                         if self.process_list[pid]['command']['section'] == section:
                             self.process_list[pid]['command'] = command_item
-                            self.stop_command(self.process_list[pid])
+                            self.stop_commands([self.process_list[pid]])
                             self.respawn_quick = True
                             break
 
@@ -410,7 +410,7 @@ class Monitor:
                 if self.process_list[pid]['command']['section'] == section:
                     command = self.process_list[pid]
                     del self.process_list[pid]
-                    self.stop_command(command)
+                    self.stop_commands([command])
                     self.log.write(0, '[%s] removed from running process list' % section)
 
     def respawn_command(self):
@@ -502,8 +502,7 @@ class Monitor:
         signal.signal(signal.SIGUSR2, signal.SIG_IGN)
 
         # shutdown ffmpeg instances
-        for pid in self.process_list.iterkeys():
-            self.stop_command(self.process_list[pid])
+        self.stop_commands(self.process_list.values())
 
         self.log.write(0, "*** sl2d terminated by signal %d ***" % signum)
         self.log.close()
@@ -511,30 +510,30 @@ class Monitor:
             os.remove(self.pidfile)
         sys.exit(os.EX_OK)
 
-    def stop_command(self, command):
-        """ Stop running command. """
+    def stop_commands(self, commands):
+        """ Stop list of running commands. """
 
-        process = command['process']
+        commands = [command for command in commands if isinstance(command['process'], subprocess.Popen)]
 
-        if not isinstance(process, subprocess.Popen):
-            return
-
-        try:
-            if process.poll() is None:
+        for command in commands:
+            if command['process'].poll() is None:
                 self.log.write(0, '[%s] sending SIGTERM' % command['command']['section'])
-                os.kill(process.pid, signal.SIGTERM)
-                time.sleep(1)
+                try:
+                    command['process'].terminate()
+                except OSError:
+                    self.log.write(0, '[%s] command already gone' % command['command']['section'])
 
-            if process.poll() is None:
+        time.sleep(1)
+
+        for command in commands:
+            if command['process'].poll() is None:
                 self.log.write(0, '[%s] sending SIGKILL' % command['command']['section'])
-                os.kill(process.pid, signal.SIGKILL)
-
-            process.wait()
-
-        except OSError:
-            self.log.write(0, '[%s] command already gone' % command['command']['section'])
-
-        self.log.write(0, '[%s] stopped' % command['command']['section'])
+                try:
+                    command['process'].kill()
+                    command['process'].wait()
+                    self.log.write(0, '[%s] stopped' % command['command']['section'])
+                except OSError:
+                    self.log.write(0, '[%s] command already gone' % command['command']['section'])
 
     def start_command(self, command):
         """ Start command and store it in process_list for reference. """
