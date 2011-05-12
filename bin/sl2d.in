@@ -545,8 +545,6 @@ class Monitor:
                 # Do not leak the frame
                 del frame
 
-        self.respawn_command()
-
     def shutdown(self, signum, frame):
         """ Shutdown sl2d on SIGTERM and SIGINT. """
 
