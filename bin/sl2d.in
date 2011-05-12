@@ -473,7 +473,7 @@ class Monitor:
                         subprocess.Popen(postcmd, stdout=trash, stderr=subprocess.STDOUT)
                     except Exception:
                         self.log.write(0, '[%s] post-death command failed' % command['section'])
-                        command['logger'].write(0, '[%s] Process %d: post-death command "%s" failed' % (pid, ' '.join(postcmd)))
+                        command['logger'].write(0, 'Process %d: post-death command "%s" failed' % (pid, ' '.join(postcmd)))
                 os.close(trash)
 
             # Adding to the 'scheduled for restart' list unless we already
