@@ -444,7 +444,7 @@ class Monitor:
 
         self.parse_config(reload_config=True)
 
-    def child_shutdown(self, signum):
+    def child_shutdown(self):
         """ Respawn command on SIGCHLD. """
 
         self.log.write(1, 'Received SIGCHLD')
@@ -459,9 +459,7 @@ class Monitor:
 
             command = self.process_list[pid]['command']
 
-            self.log.write(0, '[%s] Process %d: received signal %d' % (command['section'], pid, signum))
             self.log.write(0, '[%s] Process %d: died unexpectedly, error code is %d' % (command['section'], pid, process.poll()))
-            command['logger'].write(0, 'Process %d: received signal %d' % (pid, signum))
             command['logger'].write(0, 'Process %d: died unexpectedly, error code is %d' % (pid, process.poll()))
 
             # Execute post commands if any and if command lived long enough.
@@ -660,7 +658,7 @@ class Monitor:
                     pipe_data = self._read_all(pollfd, 10)
 
             if len(pipe_data) > 0:
-                self.child_shutdown(signal.SIGCHLD)
+                self.child_shutdown()
 
             self.respawn_command()
 
