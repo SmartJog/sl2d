@@ -629,12 +629,12 @@ class Monitor:
 
     def _read_all(self, fd, buffersize):
         """Like os.read, but retries on EINTR, and reads until EOF"""
-        all = ""
+        ret = ""
         while True:
             data = self._read_no_intr(fd, buffersize)
-            all += data
+            ret += data
             if data == "":
-                return all
+                return ret
 
 
     def run(self):
