@@ -17,7 +17,6 @@ import resource
 
 import time
 import signal
-import inspect
 import ConfigParser
 import sjutils
 
@@ -445,7 +444,7 @@ class Monitor:
 
         self.parse_config(reload_config=True)
 
-    def child_shutdown(self, signum, frame):
+    def child_shutdown(self, signum):
         """ Respawn command on SIGCHLD. """
 
         self.log.write(1, 'Received SIGCHLD')
@@ -492,32 +491,6 @@ class Monitor:
 
             del self.process_list[pid]
             self.log.write(0, '[%s] removed from running process list' % command['section'])
-
-        # Inspect context to see if we are being run during respawn_command
-        # execution. Set respawn_quick if necessary so that we will not
-        # have to wait respawn_min_delay to respawn the command we are
-        # currently treating while not interfering with current execution of
-        # respawn_command.
-        if frame:
-            try:
-                self.log.write(1, '<frame>')
-                self.log.write(2, pprint.pformat(inspect.getframeinfo(frame)))
-
-                for item in inspect.getouterframes(frame):
-                    self.log.write(2, pprint.pformat(item))
-                    self.log.write(1, '  * function: ' + item[3])
-
-                    if item[3] == "respawn_command":
-                        self.respawn_quick = True
-                        self.log.write(0, '  -> Delaying respawning')
-                        break
-
-                self.log.write(1, '</frame>')
-
-                return
-            finally:
-                # Do not leak the frame
-                del frame
 
     def shutdown(self, signum, frame):
         """ Shutdown sl2d on SIGTERM and SIGINT. """
@@ -687,7 +660,7 @@ class Monitor:
                     pipe_data = self._read_all(pollfd, 10)
 
             if len(pipe_data) > 0:
-                self.child_shutdown(signal.SIGCHLD, None)
+                self.child_shutdown(signal.SIGCHLD)
 
             self.respawn_command()
 
