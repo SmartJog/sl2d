@@ -712,10 +712,15 @@ class Monitor:
         # Main loop, monitor list of scheduled restarts
         while True:
             fdlist = self._poll_no_intr(self.poll, self.params['main_loop_delay'] * 1000)
+            pipe_data = ""
+
             for pollfd, pollevent in fdlist:
                 if pollevent & select.POLLIN:
-                    self._read_all(pollfd, 10)
-            self.child_shutdown(signal.SIGCHLD, None)
+                    pipe_data = self._read_all(pollfd, 10)
+
+            if len(pipe_data) > 0:
+                self.child_shutdown(signal.SIGCHLD, None)
+
             self.respawn_command()
 
         # This code should never be reached

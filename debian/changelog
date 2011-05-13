@@ -1,3 +1,9 @@
+sl2d (0.6.0~dev-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Rémi Cardona <remi.cardona@smartjog.com>  Wed, 11 May 2011 17:42:27 +0200
+
 sl2d (0.5.0-1) unstable; urgency=low
 
   * New upstream release, closes: #4249.
