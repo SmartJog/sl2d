@@ -1,6 +1,6 @@
 sl2d (0.6.0~dev-1) unstable; urgency=low
 
-  * New upstream release.
+  * New upstream release, closes: #4271.
 
  -- Rémi Cardona <remi.cardona@smartjog.com>  Wed, 11 May 2011 17:42:27 +0200
 
