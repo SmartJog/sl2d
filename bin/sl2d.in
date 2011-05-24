@@ -149,7 +149,6 @@ class Monitor:
         self.schedule = {}
         self.process_list = {}
         self.commands = []
-        self.respawn_quick = False
 
         self.params = {
             'main_loop_delay': DFLT_MAIN_LOOP_DELAY,
@@ -360,7 +359,6 @@ class Monitor:
                         if self.schedule[pid]['command']['section'] == section:
                             self.schedule[pid]['command'] = command_item
                             logger.write(0, "updating scheduled command")
-                            self.respawn_quick = True
                             break
 
                     # Update the push if it is currently running and kill
@@ -369,7 +367,6 @@ class Monitor:
                         if self.process_list[pid]['command']['section'] == section:
                             self.process_list[pid]['command'] = command_item
                             self.stop_commands([self.process_list[pid]])
-                            self.respawn_quick = True
                             break
 
                     break
@@ -416,17 +413,12 @@ class Monitor:
     def respawn_command(self):
         """ Restart scheduled commands. """
 
-        if self.respawn_quick:
-            self.respawn_quick = False
-
         for sched_item in self.schedule.keys():
 
             command = self.schedule[sched_item]['command']
 
-            # Command failed too quickly, wait next round before respawning
+            # skip process if it's too early to respawn it
             if self.schedule[sched_item]['timestamp'] + self.params['respawn_min_delay'] > time.time():
-                self.log.write(0, '[%s] command respawning too fast, delayed' % (command['section']))
-                command['logger'].write(0, '"%s" respawning too fast, delayed' %  " ".join(command['main']))
                 continue
 
             self.log.write(0, '[%s] respawning command' % command['section'])
@@ -649,7 +641,15 @@ class Monitor:
 
         # Main loop, monitor list of scheduled restarts
         while True:
-            fdlist = self._poll_no_intr(self.poll, self.params['main_loop_delay'] * 1000)
+
+            # find out if we need to wake up sooner than normal to respawn processes.
+            timeout = self.params['main_loop_delay']
+            for sched_item in self.schedule.values():
+                item_timeout = sched_item['timestamp'] + self.params['respawn_min_delay'] - time.time()
+                timeout      = min(timeout, item_timeout)
+            timeout = max(timeout, 0)
+
+            fdlist = self._poll_no_intr(self.poll, timeout * 1000)
             pipe_data = ""
 
             for pollfd, pollevent in fdlist:
