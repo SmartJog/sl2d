@@ -1,10 +1,10 @@
-sl2d (0.7.0~dev-1) unstable; urgency=low
+sl2d (0.7.0-1) unstable; urgency=low
 
   * New upstream release.
   * Update copyright information.
   * Switch to dpkg-source 3.0 (quilt) format.
 
- -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 26 Jun 2012 15:30:41 +0200
+ -- Gilles Dartiguelongue <gilles.dartiguelongue@smartjog.com>  Tue, 26 Jun 2012 15:35:28 +0200
 
 sl2d (0.6.0-1) unstable; urgency=low
 
