@@ -2,6 +2,7 @@ Version 0.7.0~dev
 
 	* Add rtp2udp helper script as found in production environment.
 	* Add COPYING file.
+	* Add a README.rst.
 
 Version 0.6.0 Released on 2011/06/09
 
