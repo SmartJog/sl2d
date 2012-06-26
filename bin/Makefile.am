@@ -1,5 +1,6 @@
 bin_SCRIPTS = \
-	sl2d
+	sl2d \
+	rtp2udp
 
 edit = $(SED) \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \

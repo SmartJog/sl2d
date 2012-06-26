@@ -1,0 +1,56 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+""" RTP to UDP multicast daemon. """
+
+import optparse
+import re
+import socket
+import struct
+import traceback
+
+READ_SIZE = 8192
+VERSION = "@VERSION@"
+
+
+def run(host_source, host_dest):
+    """ Main function. """
+
+    host_source = (host_source[0], int(host_source[1]))
+    host_dest = (host_dest[0], int(host_dest[1]))
+
+    # Read socket
+    r_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    r_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    #r_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    r_sock.bind(host_source)
+
+    # Add member to multicast
+    mreq = struct.pack('4sl', socket.inet_aton(host_dest[0]), socket.INADDR_ANY)
+    r_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+    # Send socket
+    s_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    #s_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+
+    while True:
+        try:
+            message, _ = r_sock.recvfrom(READ_SIZE)
+            # Acknowledge it.
+            s_sock.sendto(message[12:], host_dest)
+        except (KeyboardInterrupt, SystemExit):
+            print 'Interrupted'
+            raise
+        except Exception:
+            traceback.print_exc()
+
+if __name__ == "__main__":
+    parser = optparse.OptionParser(
+        version="%prog " + VERSION,
+        usage="%prog [OPTION] udp://source_host:port udp://dest_host:port",
+    )
+    (parsed_options, args) = parser.parse_args()
+
+    host_r = re.compile(r'udp://(?P<host>[^:]+)(?::(?P<port>\d+))?')
+    run(host_r.match(args[0]).groups(),
+        host_r.match(args[1]).groups())
